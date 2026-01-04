@@ -26,11 +26,11 @@ jobs:
 
     # 3️⃣ Restore dependencies
     - name: Restore dependencies
-      run: dotnet restore SecureApi/SecureApi.csproj
+      run: dotnet restore SecureApi.csproj
 
     # 4️⃣ Build project
     - name: Build project
-      run: dotnet build SecureApi/SecureApi.csproj --configuration Release
+      run: dotnet build SecureApi.csproj --configuration Release
 
     # 5️⃣ Run tests (if you have test project, update path)
     - name: Test project
@@ -38,7 +38,7 @@ jobs:
 
     # 6️⃣ Publish app
     - name: Publish project
-      run: dotnet publish SecureApi/SecureApi.csproj -c Release -o ./publish
+      run: dotnet publish SecureApi.csproj -c Release -o ./publish
 
     # 7️⃣ Deploy to Azure App Service
     - name: Deploy to Azure

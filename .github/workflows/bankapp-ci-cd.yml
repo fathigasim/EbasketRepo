@@ -1,4 +1,4 @@
-name: BankApp CI/CD
+name: SecureApi CI/CD
 
 on:
   push:
@@ -38,12 +38,12 @@ jobs:
 
     # 6️⃣ Publish app
     - name: Publish project
-      run: dotnet publish BankApp/BankApp.csproj -c Release -o ./publish
+      run: dotnet publish SecureApi/SecureApi.csproj -c Release -o ./publish
 
     # 7️⃣ Deploy to Azure App Service
     - name: Deploy to Azure
       uses: azure/webapps-deploy@v3
       with:
-        app-name: fathibankapp                     # your Azure App Service name
+        app-name: fathicommerce                     # your Azure App Service name
         publish-profile: ${{ secrets.AZURE_WEBAPP_PUBLISH_PROFILE }}
         package: ./publish

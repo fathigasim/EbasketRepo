@@ -1,5 +1,7 @@
 using Microsoft.AspNetCore.Identity.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore.Metadata.Builders;
+using Microsoft.EntityFrameworkCore.Metadata.Internal;
 using SecureApi.Models;
 
 namespace SecureApi.Data;
@@ -10,7 +12,10 @@ public class ApplicationDbContext : IdentityDbContext<ApplicationUser>
         : base(options)
     {
     }
+//    Key rule to remember
 
+//Configure relationships from the dependent side
+//(the side with the foreign key)
     protected override void OnModelCreating(ModelBuilder builder)
     {
         base.OnModelCreating(builder);
@@ -20,5 +25,28 @@ public class ApplicationDbContext : IdentityDbContext<ApplicationUser>
         {
             entity.ToTable("Users");
         });
+        builder.Entity<Category>().HasIndex(p=>p.Name).IsUnique();
+        builder.Entity<Product>().HasOne(p => p.Category)
+            .WithMany(p=>p.Products).HasForeignKey(p=>p.CategoryId).IsRequired(false)
+            .OnDelete(DeleteBehavior.Restrict);
+            ;
+        builder.Entity<BasketItems>().HasOne(p=>p.Basket)
+            .WithMany(p=>p.BasketItems).HasForeignKey(p=>p.BasketId)
+            .IsRequired().OnDelete(DeleteBehavior.Cascade);
     }
+    //public class ProductConfiguration : IEntityTypeConfiguration<Product>
+    //{
+    //    public void Configure(EntityTypeBuilder<Product> builder)
+    //    {
+    //        builder
+    //            .HasOne(p => p.Category)
+    //            .WithMany(c => c.Products)
+    //            .HasForeignKey(p => p.CategoryId)
+    //            .IsRequired();
+    //    }
+    //}
+
+    public DbSet<Category> Category { get; set; }
+    public DbSet<Product> Product { get; set; }
+
 }

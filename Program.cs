@@ -1,10 +1,13 @@
+using AutoMapper;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
 using Microsoft.OpenApi.Models;
+using SecureApi;
 using SecureApi.Configuration;
 using SecureApi.Data;
+using SecureApi.Middleware;
 using SecureApi.Models;
 using SecureApi.Services;
 using SecureApi.Services.Interfaces;
@@ -69,9 +72,13 @@ builder.Services.AddAuthentication(options =>
 builder.Services.AddAuthorization();
 
 // Add Services
+
+builder.Services.AddAutoMapper(typeof(Program));
+
 builder.Services.AddScoped<ITokenService, TokenService>();
 builder.Services.AddScoped<IAuthService, AuthService>();
 builder.Services.AddScoped<IUserManagementService, UserManagementService>();
+builder.Services.AddScoped<ICategoryService, CategroyService>();
 
 // Add Controllers
 builder.Services.AddControllers();
@@ -148,7 +155,13 @@ if (app.Environment.IsDevelopment())
     app.UseSwagger();
     app.UseSwaggerUI();
 }
-
+else
+{
+    //app.UseExceptionHandler("/Error"); // Built-in exception handler
+    // OR
+    app.UseMiddleware<GlobalExceptionMiddleware>(); // Custom middleware
+    app.UseHsts();
+}
 app.UseHttpsRedirection();
 
 app.UseCors("AllowAll");

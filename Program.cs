@@ -2,6 +2,7 @@ using AutoMapper;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.FileProviders;
 using Microsoft.IdentityModel.Tokens;
 using Microsoft.OpenApi.Models;
 using SecureApi;
@@ -11,9 +12,14 @@ using SecureApi.Middleware;
 using SecureApi.Models;
 using SecureApi.Services;
 using SecureApi.Services.Interfaces;
+using System.Security.Claims;
 using System.Text;
 
 var builder = WebApplication.CreateBuilder(args);
+
+builder.Services.Configure<SmtpSettings>(
+    builder.Configuration.GetSection("SmtpSettings"));
+
 
 // Add configuration
 builder.Services.Configure<JwtSettings>(builder.Configuration.GetSection("JwtSettings"));
@@ -64,8 +70,15 @@ builder.Services.AddAuthentication(options =>
         ValidIssuer = jwtSettings?.Issuer,
         ValidAudience = jwtSettings?.Audience,
         IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(jwtSettings?.SecretKey ?? "")),
-        ClockSkew = TimeSpan.Zero
+        ClockSkew = TimeSpan.Zero,
+        //  CRITICAL FIX: Tell the validator where to find the Role in the JSON
+        // -------------------------------------------------------------------
+        // Option A: Use the string literal from your token JSON
+       // RoleClaimType = "http://schemas.microsoft.com/ws/2008/06/identity/claims/role",
+        // Option B (Preferred): Use the constant that represents that string
+        RoleClaimType = ClaimTypes.Role, 
     };
+    
 });
 
 // Add Authorization
@@ -79,6 +92,12 @@ builder.Services.AddScoped<ITokenService, TokenService>();
 builder.Services.AddScoped<IAuthService, AuthService>();
 builder.Services.AddScoped<IUserManagementService, UserManagementService>();
 builder.Services.AddScoped<ICategoryService, CategroyService>();
+builder.Services.AddScoped<IProductService, ProductService>();
+builder.Services.AddScoped<IBasketService, BasketService>();
+builder.Services.AddTransient<IEmailSender, EmailSender>();
+builder.Services.AddScoped<StockService>();
+
+builder.Services.AddHttpContextAccessor(); 
 
 // Add Controllers
 builder.Services.AddControllers();
@@ -88,9 +107,9 @@ builder.Services.AddCors(options =>
 {
     options.AddPolicy("AllowAll", policy =>
     {
-        policy.AllowAnyOrigin()
+        policy.WithOrigins("http://localhost:5173")
               .AllowAnyMethod()
-              .AllowAnyHeader();
+              .AllowAnyHeader().AllowCredentials();
     });
 });
 
@@ -163,7 +182,15 @@ else
     app.UseHsts();
 }
 app.UseHttpsRedirection();
+app.UseDefaultFiles(); // serves index.html automatically
+app.UseStaticFiles(new StaticFileOptions
+{
+    FileProvider = new PhysicalFileProvider(Path.Combine(Directory.GetCurrentDirectory(), "Img")),
+    RequestPath = "/StaticImages", // This is the URL path where images will be accessed (e.g., yourdomain.com/StaticImages/my-image.png)
 
+}
+
+);
 app.UseCors("AllowAll");
 
 app.UseAuthentication();

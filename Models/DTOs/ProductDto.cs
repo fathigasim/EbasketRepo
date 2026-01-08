@@ -31,11 +31,11 @@ namespace SecureApi.Models.DTOs
         //ErrorMessageResourceType = typeof(CommonResources))]
         public IFormFile Image { get; set; } = default!;
 
-        public bool IsActive { get; set; } =true;
-        public int Stock { get; set; }
-        public int DiscountPercentage { get; set; }
-        public bool IsOnSale { get; set; }=true;
-        public DateTime? UpdatedAt { get; set; }
+        public int? CategoryId { get; set; }
+        public int? Stock { get; set; }
+        public int? DiscountPercentage { get; set; }
+     
+      
 
     }
 }

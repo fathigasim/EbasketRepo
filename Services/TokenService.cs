@@ -2,6 +2,7 @@ using Microsoft.Extensions.Options;
 using Microsoft.IdentityModel.Tokens;
 using SecureApi.Configuration;
 using SecureApi.Models;
+using SecureApi.Models.DTOs;
 using SecureApi.Services.Interfaces;
 using System.IdentityModel.Tokens.Jwt;
 using System.Security.Claims;
@@ -46,12 +47,24 @@ public class TokenService : ITokenService
         return new JwtSecurityTokenHandler().WriteToken(token);
     }
 
-    public string GenerateRefreshToken()
+    //public string GenerateRefreshToken()
+    //{
+    //    var randomNumber = new byte[64];
+    //    using var rng = RandomNumberGenerator.Create();
+    //    rng.GetBytes(randomNumber);
+    //    return Convert.ToBase64String(randomNumber);
+    //}
+    public RefreshTokenResult GenerateRefreshToken()
     {
         var randomNumber = new byte[64];
         using var rng = RandomNumberGenerator.Create();
         rng.GetBytes(randomNumber);
-        return Convert.ToBase64String(randomNumber);
+
+        return new RefreshTokenResult
+        {
+            Token = Convert.ToBase64String(randomNumber),
+            Expires = DateTime.UtcNow.AddDays(7) // Set your refresh token lifetime here
+        };
     }
 
     public ClaimsPrincipal? GetPrincipalFromExpiredToken(string token)

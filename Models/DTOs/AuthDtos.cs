@@ -36,12 +36,13 @@ public class RefreshTokenDto
     [Required]
     public string AccessToken { get; set; } = string.Empty;
 
-    [Required]
-    public string RefreshToken { get; set; } = string.Empty;
+    //[Required]
+    //public string RefreshToken { get; set; } = string.Empty;
 }
 
 public class AuthResponseDto
 {
+    public string? ActiveUser { get; set; }
     public string AccessToken { get; set; } = string.Empty;
     public string RefreshToken { get; set; } = string.Empty;
     public DateTime ExpiresAt { get; set; }

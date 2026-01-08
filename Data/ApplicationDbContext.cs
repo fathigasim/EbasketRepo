@@ -33,6 +33,11 @@ public class ApplicationDbContext : IdentityDbContext<ApplicationUser>
         builder.Entity<BasketItems>().HasOne(p=>p.Basket)
             .WithMany(p=>p.BasketItems).HasForeignKey(p=>p.BasketId)
             .IsRequired().OnDelete(DeleteBehavior.Cascade);
+        builder.Entity<BasketItems>().HasOne(p=>p.Product).
+            WithMany(p=>p.basketItems).IsRequired().HasForeignKey(p=>p.ProductId).OnDelete(DeleteBehavior.Restrict);
+        builder.Entity<BasketItems>()
+    .HasIndex(bi => new { bi.BasketId, bi.ProductId })
+    .IsUnique();
     }
     //public class ProductConfiguration : IEntityTypeConfiguration<Product>
     //{
@@ -48,5 +53,7 @@ public class ApplicationDbContext : IdentityDbContext<ApplicationUser>
 
     public DbSet<Category> Category { get; set; }
     public DbSet<Product> Product { get; set; }
+    public DbSet<Basket> Basket { get; set; }
+    public DbSet<BasketItems> BasketItems { get; set; }
 
 }

@@ -1,4 +1,4 @@
-using Microsoft.Extensions.Options;
+﻿using Microsoft.Extensions.Options;
 using Microsoft.IdentityModel.Tokens;
 using SecureApi.Configuration;
 using SecureApi.Models;
@@ -19,33 +19,62 @@ public class TokenService : ITokenService
     {
         _jwtSettings = jwtSettings.Value;
     }
-
-    public string GenerateAccessToken(ApplicationUser user, IList<string> roles)
+    // Services/TokenService.cs
+    public string GenerateAccessToken(
+        ApplicationUser user,
+        IList<string> roles,
+        string sessionId) // ✅ NEW parameter
     {
         var claims = new List<Claim>
-        {
-            new(ClaimTypes.NameIdentifier, user.Id),
-            new(ClaimTypes.Email, user.Email!),
-            new(ClaimTypes.Name, user.UserName!),
-            new(JwtRegisteredClaimNames.Jti, Guid.NewGuid().ToString()),
-        };
+    {
+        new(ClaimTypes.NameIdentifier, user.Id),
+        new(ClaimTypes.Name, user.UserName!),
+        new(ClaimTypes.Email, user.Email!),
+        new("sessionId", sessionId), // ✅ NEW: Session tracking
+        new(JwtRegisteredClaimNames.Jti, Guid.NewGuid().ToString())
+    };
 
-        // Add roles to claims
         claims.AddRange(roles.Select(role => new Claim(ClaimTypes.Role, role)));
 
         var key = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(_jwtSettings.SecretKey));
-        var credentials = new SigningCredentials(key, SecurityAlgorithms.HmacSha256);
+        var creds = new SigningCredentials(key, SecurityAlgorithms.HmacSha256);
 
         var token = new JwtSecurityToken(
             issuer: _jwtSettings.Issuer,
             audience: _jwtSettings.Audience,
             claims: claims,
             expires: DateTime.UtcNow.AddMinutes(_jwtSettings.ExpirationMinutes),
-            signingCredentials: credentials
+            signingCredentials: creds
         );
 
         return new JwtSecurityTokenHandler().WriteToken(token);
     }
+    //public string GenerateAccessToken(ApplicationUser user, IList<string> roles)
+    //{
+    //    var claims = new List<Claim>
+    //    {
+    //        new(ClaimTypes.NameIdentifier, user.Id),
+    //        new(ClaimTypes.Email, user.Email!),
+    //        new(ClaimTypes.Name, user.UserName!),
+    //        new(JwtRegisteredClaimNames.Jti, Guid.NewGuid().ToString()),
+    //    };
+
+    //    // Add roles to claims
+    //    claims.AddRange(roles.Select(role => new Claim(ClaimTypes.Role, role)));
+
+    //    var key = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(_jwtSettings.SecretKey));
+    //    var credentials = new SigningCredentials(key, SecurityAlgorithms.HmacSha256);
+
+    //    var token = new JwtSecurityToken(
+    //        issuer: _jwtSettings.Issuer,
+    //        audience: _jwtSettings.Audience,
+    //        claims: claims,
+    //        expires: DateTime.UtcNow.AddMinutes(_jwtSettings.ExpirationMinutes),
+    //        signingCredentials: credentials
+    //    );
+
+    //    return new JwtSecurityTokenHandler().WriteToken(token);
+    //}
 
     //public string GenerateRefreshToken()
     //{
@@ -100,4 +129,6 @@ public class TokenService : ITokenService
             return null;
         }
     }
+
+    
 }

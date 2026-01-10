@@ -16,8 +16,8 @@ namespace SecureApi
 
           ; // Not mapped from Product
             CreateMap<CategoryDto, Category>()
-                .ForMember(dest => dest.Products, opt => opt.Ignore())
-                .ForMember(dest => dest.Id, opt => opt.Ignore());
+                .ForMember(dest => dest.Products, opt => opt.Ignore());
+                //.ForMember(dest => dest.Id, opt => opt.Ignore());
             CreateMap<Category, CategoryDto>();
         }
 

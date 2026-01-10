@@ -34,7 +34,7 @@ namespace SecureApi.Middleware
                     UnauthorizedAccessException => StatusCodes.Status401Unauthorized,
                     KeyNotFoundException => StatusCodes.Status404NotFound,
                     ValidationException => StatusCodes.Status400BadRequest,
-                    ArgumentException => StatusCodes.Status400BadRequest,
+                    //ArgumentException => StatusCodes.Status400BadRequest,
                     //ArgumentNullException => StatusCodes.Status400BadRequest,
                     DbUpdateConcurrencyException => StatusCodes.Status409Conflict,
                     DbUpdateException dbEx when IsUniqueConstraintViolation(dbEx) => StatusCodes.Status409Conflict,

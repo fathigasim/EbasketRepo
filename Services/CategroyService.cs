@@ -4,6 +4,7 @@ using Microsoft.EntityFrameworkCore.ChangeTracking;
 using SecureApi.Data;
 using SecureApi.Models;
 using SecureApi.Models.DTOs;
+using SecureApi.Services.Interfaces;
 
 namespace SecureApi.Services
 {
@@ -19,10 +20,11 @@ namespace SecureApi.Services
             _logger = logger;
         }
 
-        public async Task<List<string>> GetCategory()
+        public async Task<List<CategoryDto>> GetCategory()
         {
-            var model = await _db.Category.Select(p =>  p.Name ).ToListAsync();
             
+            var categories = await _db.Category.ToListAsync();
+         var model = _mapper.Map<List<CategoryDto>>(categories);
             return model;
         }
         public async Task PostCategory(CategoryDto categoryDto)

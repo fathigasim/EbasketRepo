@@ -1,10 +1,10 @@
 ﻿using SecureApi.Models.DTOs;
 
-namespace SecureApi.Services
+namespace SecureApi.Services.Interfaces
 {
     public interface ICategoryService
     {
-        Task<List<string>> GetCategory();
+        Task<List<CategoryDto>> GetCategory();
         Task PostCategory(CategoryDto categoryDto);
     }
 }

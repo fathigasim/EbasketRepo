@@ -1,8 +1,9 @@
-﻿using Microsoft.AspNetCore.Identity.UI.Services;
+﻿using MailKit.Net.Smtp;
+using MailKit.Security;
+using Microsoft.AspNetCore.Identity.UI.Services;
 using Microsoft.Extensions.Options;
+using MimeKit;
 using SecureApi.Models;
-using System.Net;
-using System.Net.Mail;
 
 namespace SecureApi.Services
 {
@@ -22,35 +23,66 @@ namespace SecureApi.Services
         public async Task SendEmailAsync(
             string toEmail,
             string subject,
+            string htmlMessage)
+        {
+            await SendEmailAsync(toEmail, subject, htmlMessage, CancellationToken.None);
+        }
+
+        public async Task SendEmailAsync(
+            string toEmail,
+            string subject,
             string htmlMessage,
             CancellationToken cancellationToken = default)
         {
             if (string.IsNullOrWhiteSpace(toEmail))
-                throw new ArgumentException("Recipient email is required");
+                throw new ArgumentException("Recipient email is required", nameof(toEmail));
 
-            var mail = new MailMessage
+            if (string.IsNullOrWhiteSpace(subject))
+                throw new ArgumentException("Subject is required", nameof(subject));
+
+            var message = new MimeMessage();
+            message.From.Add(new MailboxAddress(_settings.DisplayName, _settings.From));
+            message.To.Add(MailboxAddress.Parse(toEmail));
+            message.Subject = subject;
+
+            var bodyBuilder = new BodyBuilder
             {
-                From = new MailAddress(_settings.From, _settings.DisplayName),
-                Subject = subject,
-                Body = htmlMessage,
-                IsBodyHtml = true
+                HtmlBody = htmlMessage,
+                TextBody = ConvertHtmlToPlainText(htmlMessage)
             };
 
-            mail.To.Add(toEmail);
+            message.Body = bodyBuilder.ToMessageBody();
 
             try
             {
-                using var smtp = new SmtpClient(_settings.Host, _settings.Port)
-                {
-                    Credentials = new NetworkCredential(
-                        _settings.Username,
-                        _settings.Password),
-                    EnableSsl = _settings.EnableSsl,
-                    UseDefaultCredentials = false,
-                    DeliveryMethod = SmtpDeliveryMethod.Network
-                };
+                using var client = new SmtpClient();
 
-                await smtp.SendMailAsync(mail, cancellationToken);
+                // Connect to SMTP server
+                await client.ConnectAsync(
+                    _settings.Host,
+                    _settings.Port,
+                    GetSecureSocketOptions(_settings.EnableSsl, _settings.Port),
+                    cancellationToken);
+
+                // Authenticate
+                if (!string.IsNullOrWhiteSpace(_settings.Username) &&
+                    !string.IsNullOrWhiteSpace(_settings.Password))
+                {
+                    await client.AuthenticateAsync(
+                        _settings.Username,
+                        _settings.Password,
+                        cancellationToken);
+                }
+
+                // Send email
+                await client.SendAsync(message, cancellationToken);
+
+                // Disconnect
+                await client.DisconnectAsync(true, cancellationToken);
+
+                _logger.LogInformation(
+                    "Email sent successfully to {Email}. Subject: {Subject}",
+                    toEmail, subject);
             }
             catch (Exception ex)
             {
@@ -58,13 +90,47 @@ namespace SecureApi.Services
                     "Failed to send email to {Email}. Subject: {Subject}",
                     toEmail, subject);
 
-                throw; // Let caller decide what to do
+                throw;
             }
         }
 
-        public Task SendEmailAsync(string email, string subject, string htmlMessage)
+        /// <summary>
+        /// Determines the appropriate SSL/TLS options based on settings
+        /// </summary>
+        private static SecureSocketOptions GetSecureSocketOptions(bool enableSsl, int port)
         {
-            throw new NotImplementedException();
+            if (!enableSsl)
+                return SecureSocketOptions.None;
+
+            // Port 465 typically uses implicit SSL, port 587 uses STARTTLS
+            return port == 465
+                ? SecureSocketOptions.SslOnConnect
+                : SecureSocketOptions.StartTls;
+        }
+
+        /// <summary>
+        /// Simple HTML to plain text converter for email fallback
+        /// </summary>
+        private static string ConvertHtmlToPlainText(string html)
+        {
+            if (string.IsNullOrWhiteSpace(html))
+                return string.Empty;
+
+            // Remove HTML tags
+            var plainText = System.Text.RegularExpressions.Regex.Replace(html, "<.*?>", " ");
+
+            // Replace common HTML entities
+            plainText = plainText
+                .Replace("&nbsp;", " ")
+                .Replace("&amp;", "&")
+                .Replace("&lt;", "<")
+                .Replace("&gt;", ">")
+                .Replace("&quot;", "\"");
+
+            // Normalize whitespace
+            plainText = System.Text.RegularExpressions.Regex.Replace(plainText, @"\s+", " ");
+
+            return plainText.Trim();
         }
     }
 }

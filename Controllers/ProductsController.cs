@@ -31,7 +31,7 @@ namespace SecureApi.Controllers
       [Authorize(Roles ="Admin,User")]
        //[Authorize]
         [HttpGet]
-        public async Task<ActionResult> Get(string? q = "",int?category=null, string? sort = "", int page = 1, int pageSize = 5)
+        public async Task<ActionResult> Get(string? q = "",string?category="" ,string? sort = "", int page = 1, int pageSize = 5)
         {
            var model=await _productService.Get(q,category ,sort, page, pageSize);
             return Ok(model);

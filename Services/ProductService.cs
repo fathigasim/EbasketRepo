@@ -21,14 +21,14 @@ namespace SecureApi.Services
             _contextAccessor = contextAccessor;
         }
 
-        public async Task<PagedResult<ProductDto>> Get(string? q,int?category, string? sort, int page, int pageSize)
+        public async Task<PagedResult<ProductDto>> Get(string? q,string? category ,string? sort, int page, int pageSize)
         {
             var Request = _contextAccessor?.HttpContext?.Request;
             var query = _context.Product.AsQueryable();
             if (!string.IsNullOrEmpty(q))
                 query = query.Where(p => p.Name.Contains(q));
-            if (category !=null)
-                query = query.Where(p => p.CategoryId==category);
+            if (!string.IsNullOrEmpty(category))
+                query = query.Where(p => p.Category.Name.Contains(category));
             if (sort == "lowToHigh")
                 query = query.OrderBy(p => p.Price);
             else if (sort == "highToLow")

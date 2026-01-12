@@ -765,7 +765,7 @@ public class AuthService : IAuthService
             Message = "Invalid email or password.",
             Errors = new List<string> { "Authentication failed." }
         };
-    //for single session enforcement
+    //for single session enforcement 
     public async Task<ApiResponse<AuthResponseDto>> LoginAsync(LoginDto loginDto)
     {
         try

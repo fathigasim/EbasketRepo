@@ -33,7 +33,7 @@ namespace SecureApi.Controllers
         [HttpGet]
         public async Task<ActionResult> Get(string? q = "",string?category="" ,string? sort = "", int page = 1, int pageSize = 5)
         {
-           var model=await _productService.Get(q,category ,sort, page, pageSize);
+            var model=await _productService.Get(q,category ,sort, page, pageSize);
             return Ok(model);
         }
 

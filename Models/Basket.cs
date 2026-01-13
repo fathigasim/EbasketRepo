@@ -11,6 +11,8 @@ namespace SecureApi.Models
         public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
 
         public List<BasketItems> BasketItems { get; set; } = new();
+        //public string    AppUserId { get; set; } = default!;
+        //public ApplicationUser AppUser { get; set; }=default!;
 
     }
 }

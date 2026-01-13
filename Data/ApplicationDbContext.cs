@@ -38,7 +38,11 @@ public class ApplicationDbContext : IdentityDbContext<ApplicationUser>
         builder.Entity<BasketItems>()
     .HasIndex(bi => new { bi.BasketId, bi.ProductId })
     .IsUnique();
+        builder.Entity<OrderItems>().HasOne(p=>p.Order)
+            .WithMany(p=>p.OrderItems).HasForeignKey(p=>p.OrderId)
+            .IsRequired().OnDelete(DeleteBehavior.Cascade);
     }
+
     //public class ProductConfiguration : IEntityTypeConfiguration<Product>
     //{
     //    public void Configure(EntityTypeBuilder<Product> builder)
@@ -55,5 +59,7 @@ public class ApplicationDbContext : IdentityDbContext<ApplicationUser>
     public DbSet<Product> Product { get; set; }
     public DbSet<Basket> Basket { get; set; }
     public DbSet<BasketItems> BasketItems { get; set; }
+    public DbSet<Order> Order { get; set; }
+    public DbSet<OrderItems> OrderItems { get; set; }
 
 }

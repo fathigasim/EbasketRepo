@@ -1,6 +1,7 @@
 ﻿using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using SecureApi.Models;
+using SecureApi.Services;
 
 namespace SecureApi.Controllers
 {
@@ -8,10 +9,10 @@ namespace SecureApi.Controllers
     [ApiController]
     public class OrderController : ControllerBase
     {
-        UserContext dbContext;
-        public OrderController(UserContext _dbContext)
+          private readonly IOrderService _orderService;
+        public OrderController(IOrderService orderService)
         {
-            dbContext = _dbContext;
+            _orderService = orderService;
         }
 
         [HttpGet]
@@ -19,17 +20,7 @@ namespace SecureApi.Controllers
         {
 
 
-            var query = dbContext.Order.Include(p => p.OrderItems).AsQueryable();
-
-            var totalItems = query.Count();
-            var model = await query.Skip((page - 1) * pageSize).Take(pageSize).ToListAsync();
-            var result = new PagedResult<Order>
-            {
-                Items = model,
-                PageNumber = page,
-                PageSize = pageSize,
-                TotalCount = totalItems,
-            };
+         var result=   await _orderService.GetAsync(page, pageSize);
             return Ok(result);
         }
 
@@ -37,63 +28,46 @@ namespace SecureApi.Controllers
         public async Task<IActionResult> GetAllAsync()
         {
 
+         var result=_orderService.GetAllAsync();
 
-            var query = dbContext.Order.Include(p => p.OrderItems).AsQueryable();
-
-            var totalItems = query.Count();
-            var model = await query.ToListAsync();
-
-            return Ok(model);
+            return Ok(result);
         }
 
         [HttpGet("{date}")]
         public async Task<ActionResult<PagedResult<Order>>> GetAsync(DateTime date, int page = 1, int pageSize = 3)
         {
-            var query = dbContext.Order.Include(p => p.OrderItems).AsQueryable();
-            if (!string.IsNullOrEmpty(date.ToString()))
-            {
-                query = query.Where(p => p.CreatedAt.Date == date.Date);
-            }
-            var model = await query.Skip((page - 1) * pageSize).Take(pageSize).ToListAsync();
-            var totalItems = query.Count();
-            var result = new PagedResult<Order>
-            {
-                Items = model,
-                PageNumber = page,
-                PageSize = pageSize,
-                TotalCount = totalItems,
-            };
+            var result=   await _orderService.GetAsync(date, page, pageSize);
 
             return Ok(result);
         }
 
-        [HttpGet("OrderSum")]
-        public async Task<ActionResult<PagedResult<OrderSumVm>>> GetOrderSumAsync(int page = 1, int pageSize = 3)
-        {
-            var query = (from ord in dbContext.Order
-                         join itm in dbContext.OrderItems
-                       on ord.Id equals itm.OrderId
-                         group new { ord, itm }
-                       by ord.Id into g
-                         select new OrderSumVm
-                         {
-                             OrderId = g.Key,
-                             Total = g.Sum(p => p.itm.Quantity * p.itm.Price),
-                             Product = g.First().itm.Name ?? "",
-                             Items = g.Select(p =>
-                             new OrderSumItemsVm
-                             {
-                                 ProductName = p.itm.Name,
-                                 ProductQuantity = p.itm.Quantity,
-                                 ProductPrice = p.itm.Price
-                             }).ToList(),
-                         }).AsQueryable();
+        //[HttpGet("OrderSum")]
+        //public async Task<ActionResult<PagedResult<OrderSumVm>>> GetOrderSumAsync(int page = 1, int pageSize = 3)
+        //{
+        //    var query = (from ord in dbContext.Order
+        //                 join itm in dbContext.OrderItems
+        //               on ord.Id equals itm.OrderId
+        //                 group new { ord, itm }
+        //               by ord.Id into g
+        //                 select new OrderSumVm
+        //                 {
+        //                     OrderId = g.Key,
+        //                     Total = g.Sum(p => p.itm.Quantity * p.itm.Price),
+        //                     Product = g.First().itm.Name ?? "",
+        //                     Items = g.Select(p =>
+        //                     new OrderSumItemsVm
+        //                     {
+        //                         ProductName = p.itm.Name,
+        //                         ProductQuantity = p.itm.Quantity,
+        //                         ProductPrice = p.itm.Price
+        //                     }).ToList(),
+        //                 }).AsQueryable();
 
-            var model = await query.Skip((page - 1) * pageSize).Take(pageSize).ToListAsync();
-            var totalItems = query.Count();
-            var result = new PagedResult<OrderSumVm> { Items = model, PageNumber = page, PageSize = pageSize, TotalItems = totalItems, };
-            return Ok(result);
-        }
+        //    var model = await query.Skip((page - 1) * pageSize).Take(pageSize).ToListAsync();
+        //    var totalItems = query.Count();
+        //    var result = new PagedResult<OrderSumVm> { Items = model, PageNumber = page, PageSize = pageSize, TotalItems = totalItems, };
+        //    return Ok(result);
+        //}
         //[HttpPost]
         //public async Task<IActionResult> Post()
         //{

@@ -3,6 +3,7 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
 using Microsoft.EntityFrameworkCore.Metadata.Internal;
 using SecureApi.Models;
+using System.Reflection.Emit;
 
 namespace SecureApi.Data;
 
@@ -41,6 +42,50 @@ public class ApplicationDbContext : IdentityDbContext<ApplicationUser>
         builder.Entity<OrderItems>().HasOne(p=>p.Order)
             .WithMany(p=>p.OrderItems).HasForeignKey(p=>p.OrderId)
             .IsRequired().OnDelete(DeleteBehavior.Cascade);
+
+        // Order Configuration
+        builder.Entity<Order>(entity =>
+        {
+            entity.HasKey(e => e.Id);
+
+            entity.Property(e => e.TotalAmount)
+                .HasPrecision(18, 2)
+                .IsRequired();
+
+            entity.Property(e => e.Status)
+                .HasDefaultValue(OrderStatus.Pending);
+
+            // Relationship with Identity User
+            //entity.HasOne(e => e.User)
+            //    .WithMany(u => u.Orders)
+            //    .HasForeignKey(e => e.UserId)
+            //    .OnDelete(DeleteBehavior.Restrict); // Don't delete orders if user is deleted
+        });
+
+        // OrderItems Configuration
+        builder.Entity<OrderItems>(entity =>
+        {
+            entity.HasKey(e => e.Id);
+
+            entity.Property(e => e.Price)
+                .HasPrecision(18, 2)
+                .IsRequired();
+
+            entity.Property(e => e.Discount)
+                .HasPrecision(18, 2)
+                .HasDefaultValue(0);
+
+            entity.HasOne(e => e.Order)
+                .WithMany(o => o.OrderItems)
+                .HasForeignKey(e => e.OrderId)
+                .OnDelete(DeleteBehavior.Cascade); // Delete items when order is deleted
+        });
+
+        // StripeWebhookEvent Configuration
+        builder.Entity<StripeWebhookEvent>(entity =>
+        {
+            entity.HasKey(e => e.Id);
+        });
     }
 
     //public class ProductConfiguration : IEntityTypeConfiguration<Product>
@@ -61,5 +106,6 @@ public class ApplicationDbContext : IdentityDbContext<ApplicationUser>
     public DbSet<BasketItems> BasketItems { get; set; }
     public DbSet<Order> Order { get; set; }
     public DbSet<OrderItems> OrderItems { get; set; }
+    public DbSet<StripeWebhookEvent> StripeWebhookEvents { get; set; }
 
 }

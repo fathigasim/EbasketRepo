@@ -28,8 +28,8 @@ namespace SecureApi.Controllers
             mapper = _mapper;
            
         }
-      [Authorize(Roles ="Admin,User")]
-       //[Authorize]
+        [Authorize(Roles = "Admin,User")]
+        //[Authorize]
         [HttpGet]
         public async Task<ActionResult> Get(string? q = "",string?category="" ,string? sort = "", int page = 1, int pageSize = 5)
         {

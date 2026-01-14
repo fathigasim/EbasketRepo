@@ -42,15 +42,30 @@ namespace SecureApi.Services
             throw new NotImplementedException();
         }
 
-        public Task<PagedResult<Order>> GetAsync(DateTime date, int page = 1, int pageSize = 3)
+        public async Task<PagedResult<Order>> GetAsync(DateTime date, int page = 1, int pageSize = 3)
         {
-            throw new NotImplementedException();
+            var query = _context.Order.Include(p => p.OrderItems).AsQueryable();
+            if (!string.IsNullOrEmpty(date.ToString()))
+            {
+                query = query.Where(p => p.CreatedAt.Date == date.Date);
+            }
+            var model = await query.Skip((page - 1) * pageSize).Take(pageSize).ToListAsync();
+            var totalItems = query.Count();
+            var result = new PagedResult<Order>
+            {
+                Items = model,
+                PageNumber = page,
+                PageSize = pageSize,
+                TotalCount = totalItems,
+            };
+
+            return result;
         }
 
-        public Task<PagedResult<OrderSumVm>> GetOrderSumAsync(int page = 1, int pageSize = 3)
-        {
-            throw new NotImplementedException();
-        }
+        //public Task<PagedResult<OrderSumVm>> GetOrderSumAsync(int page = 1, int pageSize = 3)
+        //{
+        //    throw new NotImplementedException();
+        //}
 
         //public Task<PagedResult<OrderSumVm>> GetOrderSumAsync(int page = 1, int pageSize = 3)
         //{

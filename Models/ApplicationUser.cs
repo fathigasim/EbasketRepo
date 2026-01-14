@@ -8,8 +8,11 @@ public class ApplicationUser : IdentityUser
     public DateTime? RefreshTokenExpiryTime { get; set; }
     public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
 
-    // ✅ NEW: Session tracking
+    //  NEW: Session tracking
     public string? CurrentSessionId { get; set; } // New login = new GUID
     public DateTime? LastLoginAt { get; set; }
     public string? LastLoginIp { get; set; }
+    //public DateTime? DateOfBirth { get; set; }
+    // Navigation to orders
+    //public ICollection<Order> Orders { get; set; } = new List<Order>();
 }

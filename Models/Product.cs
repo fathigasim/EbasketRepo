@@ -15,6 +15,8 @@ namespace SecureApi.Models
         public int? Stock { get; set; }
         public int? DiscountPercentage { get; set; }
         public bool IsOnSale { get; set; } = true;
+        //public int ReservedStock { get; set; } = 0;
+        //public int SoldCount { get; set; } = 0;
         public DateTime? UpdatedAt { get; set; }
         public int? CategoryId { get; set; }
         public Category? Category { get; set; }

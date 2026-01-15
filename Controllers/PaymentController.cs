@@ -5,6 +5,7 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using SecureApi.Data;
 using SecureApi.Models;
+using SecureApi.Models.DTOs;
 using Stripe;
 using Stripe.Checkout;
 using System.ComponentModel.DataAnnotations;
@@ -164,7 +165,7 @@ namespace SecureApi.Controllers
                 }
 
                 // 6. Configure Stripe
-                StripeConfiguration.ApiKey = _configuration["Stripe:SecretKey"];
+                StripeConfiguration.ApiKey = _configuration["Stripe:StripeKey"];
                 var domain = _configuration["Stripe:FrontendUrl"];
 
                 if (string.IsNullOrWhiteSpace(domain))
@@ -363,19 +364,19 @@ namespace SecureApi.Controllers
                 }
 
                 // Verify amount
-                //var paidAmount = session.AmountTotal / 100m;
-                //if (Math.Abs(paidAmount - order.TotalAmount) > 0.01m)
-                //{
-                //    _logger.LogError(
-                //        "Amount mismatch for {Ref}. Expected: {Expected}, Paid: {Paid}",
-                //        session.ClientReferenceId, order.TotalAmount, paidAmount);
+                var paidAmount = session.AmountTotal / 100m ??0;
+                if (Math.Abs(paidAmount - order.TotalAmount) > 0.01m)
+                {
+                    _logger.LogError(
+                        "Amount mismatch for {Ref}. Expected: {Expected}, Paid: {Paid}",
+                        session.ClientReferenceId, order.TotalAmount, paidAmount);
 
-                //    order.Status = "PaymentMismatch";
-                //    order.UpdatedAt = DateTime.UtcNow;
-                //    await _dbContext.SaveChangesAsync();
-                //    await transaction.CommitAsync();
-                //    return;
-                //}
+                    order.Status = "PaymentMismatch";
+                    order.UpdatedAt = DateTime.UtcNow;
+                    await _dbContext.SaveChangesAsync();
+                    await transaction.CommitAsync();
+                    return;
+                }
 
                 order.Status = OrderStatus.Paid;
                 order.StripePaymentIntentId = session.PaymentIntentId;
@@ -449,7 +450,7 @@ namespace SecureApi.Controllers
 
             var order = await _dbContext.Order
                 .Include(o => o.OrderItems)
-                .AsNoTracking()
+               .AsNoTracking()
                 .FirstOrDefaultAsync(o =>
                     o.OrderReference == orderReference &&
                     o.UserId == user.Id);
@@ -563,22 +564,5 @@ namespace SecureApi.Controllers
         }
     }
 
-    public class CartItemDto
-    {
-        [Required]
-        public string ProductId { get; set; } = "";
-
-        [Required]
-        [StringLength(255)]
-        public string ProductName { get; set; } = "";
-
-        [Url]
-        public string? Image { get; set; }
-
-        [Range(0.01, 1000000)]
-        public decimal Price { get; set; }
-
-        [Range(1, 999)]
-        public int Quantity { get; set; }
-    }
+    
 }

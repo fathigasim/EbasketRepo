@@ -56,10 +56,10 @@ public class ApplicationDbContext : IdentityDbContext<ApplicationUser>
                 .HasDefaultValue(OrderStatus.Pending);
 
             // Relationship with Identity User
-            //entity.HasOne(e => e.User)
-            //    .WithMany(u => u.Orders)
-            //    .HasForeignKey(e => e.UserId)
-            //    .OnDelete(DeleteBehavior.Restrict); // Don't delete orders if user is deleted
+            entity.HasOne(e => e.User)
+                .WithMany(u => u.Orders)
+                .HasForeignKey(e => e.UserId)
+                .OnDelete(DeleteBehavior.Restrict); // Don't delete orders if user is deleted
         });
 
         // OrderItems Configuration

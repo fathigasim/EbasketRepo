@@ -21,7 +21,7 @@ namespace SecureApi.Services
             _contextAccessor = contextAccessor;
         }
 
-        public async Task<PagedResult<ProductDto>> Get(string? q,string? category ,string? sort, int page, int pageSize)
+        public async Task<PagedResult<ProductDto>> Get(string? q,string? sort, string? category, int page, int pageSize)
         {
             var Request = _contextAccessor?.HttpContext?.Request;
             var query = _context.Product.AsQueryable();
@@ -67,13 +67,14 @@ namespace SecureApi.Services
                 {
                     Directory.CreateDirectory("Img");
                 }
-                var filename = Guid.NewGuid().ToString().Substring(1, 8) + productdto?.Image?.FileName;
+            var filename = Guid.NewGuid().ToString().Substring(1, 8) + productdto?.Image?.FileName;
+                
                 var uploadfolder = Path.Combine(Directory.GetCurrentDirectory(), "Img");
 
                 var filepath = Path.Combine(uploadfolder, filename);
                 using (var filestream = new FileStream(filepath, FileMode.Create))
                 {
-                    productdto?.Image?.CopyTo(filestream);
+                    productdto.Image?.CopyTo(filestream);
                 }
                 productdto.ImagePath = filename ;
 

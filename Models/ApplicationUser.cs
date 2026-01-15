@@ -14,5 +14,5 @@ public class ApplicationUser : IdentityUser
     public string? LastLoginIp { get; set; }
     //public DateTime? DateOfBirth { get; set; }
     // Navigation to orders
-    //public ICollection<Order> Orders { get; set; } = new List<Order>();
+    public ICollection<Order> Orders { get; set; } = new List<Order>();
 }

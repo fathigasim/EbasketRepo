@@ -83,6 +83,20 @@ namespace SecureApi.Controllers
                 return BadRequest("Basket already empty");
             }
         }
+
+        [HttpDelete("RemoveBasket")]
+        public async Task<IActionResult> RemoveBasket()
+        {
+            try
+            {
+                await basketService.RemoveBasket(HttpContext);
+                return Ok("Basket Removed");
+            }
+            catch (ArgumentException ex)
+            {
+                return BadRequest("Basket Not Found");
+            }
+        }
         //[HttpGet("BasketItems")]
         //public async Task<IActionResult> BasketItems(HttpContext httpcontext)
         //{

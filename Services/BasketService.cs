@@ -181,6 +181,19 @@ namespace SecureApi.Services
 
             await context.SaveChangesAsync();
         }
+
+        public async Task RemoveBasket(HttpContext httpContext)
+        {
+            var basket = await GetBasket(httpContext, false);
+               context.Basket.Remove(basket);
+            await context.SaveChangesAsync();
+          //  if (basket == null) return;
+
+
+
+            httpContext.Response.Cookies.Delete(BasketSessionName);
+            await context.SaveChangesAsync();
+        }
     }
 
 }

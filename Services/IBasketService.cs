@@ -10,6 +10,7 @@ namespace SecureApi.Services
         Task RemoveFromBasket(HttpContext httpContext, string productId, int quantity = 1);
         Task<List<BasketItemViewModel>> GetBasketItems(HttpContext httpContext);
         Task ClearBasket(HttpContext httpContext);
+        Task RemoveBasket(HttpContext httpContext);
         Task<BasketSummeryViewModel> GetBasketSummery(HttpContext httpContext);
 
     }

@@ -1,23 +1,18 @@
-﻿using Microsoft.EntityFrameworkCore;
-using System.ComponentModel.DataAnnotations;
+﻿using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
 
-namespace SecureApi.Models
+namespace SecureApi.Models.DTOs
 {
-    [Index(nameof(OrderId))]
-    [Index(nameof(ProductId))]
-    public class OrderItems
+    public class OrderItemsDto
     {
-        [Key]
-        public string Id { get; set; } = Guid.NewGuid().ToString();
+       
 
         [Required]
         public string OrderId { get; set; } = default!;
 
-        //[StringLength(255)]
+        [StringLength(255)]
         public string? ProductId { get; set; }
 
-        public Product Product { get; set; }
         [Required]
         [StringLength(255)]
         public string Name { get; set; } = "";
@@ -40,14 +35,10 @@ namespace SecureApi.Models
         [Column(TypeName = "decimal(18,2)")]
         public decimal Discount { get; set; } = 0;
 
-        // Navigation
-        [ForeignKey(nameof(OrderId))]
-        public Order Order { get; set; } = default!;
+      
 
         [NotMapped]
         public decimal Subtotal => (Price * Quantity) - Discount;
-
-        
-
+        public string ProductName { get; set; } =default!;
     }
 }

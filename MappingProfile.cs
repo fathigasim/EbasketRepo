@@ -19,6 +19,10 @@ namespace SecureApi
                 .ForMember(dest => dest.Products, opt => opt.Ignore());
                 //.ForMember(dest => dest.Id, opt => opt.Ignore());
             CreateMap<Category, CategoryDto>();
+
+            CreateMap<Order, OrderDto>();
+
+            CreateMap<OrderItems, OrderItemsDto>();
         }
 
     }

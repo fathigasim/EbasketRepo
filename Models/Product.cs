@@ -22,5 +22,7 @@ namespace SecureApi.Models
         public Category? Category { get; set; }
         public List<BasketItems> basketItems { get; set; } = new List<BasketItems>();
 
+        public List<OrderItems> OrderItems { get; set; } = new List<OrderItems>();
+
     }
 }

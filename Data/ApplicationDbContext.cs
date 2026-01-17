@@ -13,10 +13,10 @@ public class ApplicationDbContext : IdentityDbContext<ApplicationUser>
         : base(options)
     {
     }
-//    Key rule to remember
+    //    Key rule to remember
 
-//Configure relationships from the dependent side
-//(the side with the foreign key)
+    //Configure relationships from the dependent side
+    //(the side with the foreign key)
     protected override void OnModelCreating(ModelBuilder builder)
     {
         base.OnModelCreating(builder);
@@ -26,21 +26,21 @@ public class ApplicationDbContext : IdentityDbContext<ApplicationUser>
         {
             entity.ToTable("Users");
         });
-        builder.Entity<Category>().HasIndex(p=>p.Name).IsUnique();
+        builder.Entity<Category>().HasIndex(p => p.Name).IsUnique();
         builder.Entity<Product>().HasOne(p => p.Category)
-            .WithMany(p=>p.Products).HasForeignKey(p=>p.CategoryId).IsRequired(false)
+            .WithMany(p => p.Products).HasForeignKey(p => p.CategoryId).IsRequired(false)
             .OnDelete(DeleteBehavior.Restrict);
-            ;
-        builder.Entity<BasketItems>().HasOne(p=>p.Basket)
-            .WithMany(p=>p.BasketItems).HasForeignKey(p=>p.BasketId)
+        ;
+        builder.Entity<BasketItems>().HasOne(p => p.Basket)
+            .WithMany(p => p.BasketItems).HasForeignKey(p => p.BasketId)
             .IsRequired().OnDelete(DeleteBehavior.Cascade);
-        builder.Entity<BasketItems>().HasOne(p=>p.Product).
-            WithMany(p=>p.basketItems).IsRequired().HasForeignKey(p=>p.ProductId).OnDelete(DeleteBehavior.Restrict);
+        builder.Entity<BasketItems>().HasOne(p => p.Product).
+            WithMany(p => p.basketItems).IsRequired().HasForeignKey(p => p.ProductId).OnDelete(DeleteBehavior.Restrict);
         builder.Entity<BasketItems>()
     .HasIndex(bi => new { bi.BasketId, bi.ProductId })
     .IsUnique();
-        builder.Entity<OrderItems>().HasOne(p=>p.Order)
-            .WithMany(p=>p.OrderItems).HasForeignKey(p=>p.OrderId)
+        builder.Entity<OrderItems>().HasOne(p => p.Order)
+            .WithMany(p => p.OrderItems).HasForeignKey(p => p.OrderId)
             .IsRequired().OnDelete(DeleteBehavior.Cascade);
 
         // Order Configuration
@@ -86,7 +86,16 @@ public class ApplicationDbContext : IdentityDbContext<ApplicationUser>
         {
             entity.HasKey(e => e.Id);
         });
-    }
+
+        builder.Entity<OrderItems>(entity =>
+        {
+            entity.HasOne(oi => oi.Product)
+                  .WithMany(p => p.OrderItems)
+                  .HasForeignKey(oi => oi.ProductId)
+                  .OnDelete(DeleteBehavior.Restrict); // Prevent deletion if referenced in OrderItems
+
+        });
+        }
 
     //public class ProductConfiguration : IEntityTypeConfiguration<Product>
     //{

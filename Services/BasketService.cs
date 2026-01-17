@@ -176,7 +176,7 @@ namespace SecureApi.Services
             var basket = await GetBasket(httpContext, false);
             if (basket == null) return;
 
-            var items = context.BasketItems.Where(i => i.BasketId == basket.BasketId).ExecuteDeleteAsync();
+            var items = await context.BasketItems.Where(i => i.BasketId == basket.BasketId).ExecuteDeleteAsync();
 
 
             await context.SaveChangesAsync();

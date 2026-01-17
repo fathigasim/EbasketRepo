@@ -7,9 +7,9 @@ namespace SecureApi.Controllers
 {
     [Route("api/[controller]")]
     [ApiController]
-    public class OrderController : ControllerBase
-    {
-          private readonly IOrderService _orderService;
+        public class OrderController : ControllerBase
+        {
+        private readonly IOrderService _orderService;
         public OrderController(IOrderService orderService)
         {
             _orderService = orderService;
@@ -17,21 +17,21 @@ namespace SecureApi.Controllers
 
         [HttpGet]
         public async Task<ActionResult<PagedResult<Order>>> GetAsync(int page = 1, int pageSize = 3)
-        {
-
-
-         var result=   await _orderService.GetAsync(page, pageSize);
-            return Ok(result);
+        {    
+              
+         var result = await _orderService.GetAsync(page, pageSize);
+              
+             return Ok(result);
         }
+
 
         [HttpGet("GetAllOrders")]
         public async Task<IActionResult> GetAllAsync()
         {
-
-         var result=_orderService.GetAllAsync();
-
-            return Ok(result);
+         var result= await _orderService.GetAllAsync();
+         return Ok(result);
         }
+
 
         [HttpGet("{date}")]
         public async Task<ActionResult<PagedResult<Order>>> GetAsync(DateTime date, int page = 1, int pageSize = 3)

@@ -13,7 +13,7 @@ namespace SecureApi.Models
         public class Order
         {
             [Key]
-            public string Id { get; set; } = Guid.NewGuid().ToString();
+            public string Id { get; set; } = Guid.NewGuid().ToString().Substring(1,8).ToUpper();
 
             /// <summary>
             /// ASP.NET Identity User ID (string)

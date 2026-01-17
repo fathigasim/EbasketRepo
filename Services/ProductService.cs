@@ -21,7 +21,7 @@ namespace SecureApi.Services
             _contextAccessor = contextAccessor;
         }
 
-        public async Task<PagedResult<ProductDto>> Get(string? q,string? sort, string? category, int page, int pageSize)
+        public async Task<PagedResult<ProductDto>> Get(string? q, string? category,string? sort, int page, int pageSize)
         {
             var Request = _contextAccessor?.HttpContext?.Request;
             var query = _context.Product.AsQueryable();

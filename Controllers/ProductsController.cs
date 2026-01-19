@@ -28,8 +28,9 @@ namespace SecureApi.Controllers
             mapper = _mapper;
            
         }
-        [Authorize(Roles = "Admin,User")]
+       // [Authorize(Roles = "Admin,User")]
         //[Authorize]
+        [AllowAnonymous]
         [HttpGet]
         public async Task<ActionResult> Get(string? q = "",string?category="" ,string? sort = "", int page = 1, int pageSize = 5)
         {
@@ -126,29 +127,13 @@ namespace SecureApi.Controllers
 
 
 
-        //[HttpPut("{id}")]
-        //public async Task<IActionResult> Put(string id, ProductDto productdto)
-        //{
-        //    //Console.WriteLine($"Raw JSON: {await new StreamReader(Request.Body).ReadToEndAsync()}");
-        //    if (id == null)
-        //        return BadRequest("Product not found");
+        [HttpPut("{id}")]
+        public async Task<IActionResult> Put(string id, ProductDto productdto)
+        {
+            var result = await _productService.UpdateProductAsync(id, productdto);
 
-        //    var product = new Product
-        //    {
-        //        Name = productdto.Name,
-        //        Price = productdto.Price
-        //    };
-        //    var producttoUpdate = await dbContext.Product.Where(p => p.Id == id).FirstOrDefaultAsync();
-        //    if (producttoUpdate != null)
-        //    {
-        //        producttoUpdate.Price = productdto.Price;
-        //        producttoUpdate.Name = productdto.Name;
-        //    }
-        //    dbContext.Product.Update(producttoUpdate);
-        //    await dbContext.SaveChangesAsync();
-
-        //    return Ok(producttoUpdate); // ✅ return the updated product
-        //}
+            return Ok(result); // ✅ return the updated product
+        }
 
         //[HttpDelete("{id}")]
         //public async Task<IActionResult> Delete(string id)

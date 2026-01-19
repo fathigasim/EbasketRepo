@@ -7,9 +7,9 @@ namespace SecureApi.Models.DTOs
     {
      
         public string? Id { get; set; } 
-        [Display(Name="Name"),Required(ErrorMessage ="Name_is_Required")]
-        public string Name { get; set; } = default!;
-        [Display(Name = "Name"), Range(1,20,ErrorMessage ="Less_than_or_exceeded_range_price")]
+        //[Display(Name="Name"),Required(ErrorMessage ="Name_is_Required")]
+        public string? Name { get; set; }
+       // [Display(Name = "Name"), Range(1,20,ErrorMessage ="Less_than_or_exceeded_range_price")]
         public decimal Price { get; set; }
 
         public IFormFile? Image { get; set; }

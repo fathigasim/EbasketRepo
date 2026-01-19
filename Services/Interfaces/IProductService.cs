@@ -6,8 +6,9 @@ namespace SecureApi.Services.Interfaces
 {
     public interface IProductService 
     {
-        Task<PagedResult<ProductDto>> Get(string? q = "",string?category="", string? sort = "", int page = 1, int pageSize = 5);
+      public  Task<PagedResult<ProductDto>> Get(string? q = "",string?category="", string? sort = "", int page = 1, int pageSize = 5);
 
-        Task PostProudct(ProductDto productdto);
+      public  Task PostProudct(ProductDto productdto);
+      public  Task<Product> UpdateProductAsync(string id, ProductDto productDto);
     }
 }

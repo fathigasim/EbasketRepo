@@ -24,7 +24,7 @@ namespace SecureApi.Services
         public async Task<PagedResult<ProductDto>> Get(string? q, string? category,string? sort, int page, int pageSize)
         {
             var Request = _contextAccessor?.HttpContext?.Request;
-            var query = _context.Product.AsQueryable();
+            var query = _context.Product.AsNoTracking().AsQueryable();
             if (!string.IsNullOrEmpty(q))
                 query = query.Where(p => p.Name.Contains(q));
             if (!string.IsNullOrEmpty(category))
@@ -94,6 +94,27 @@ namespace SecureApi.Services
                
             
           
+        }
+
+        public async Task<Product> UpdateProductAsync(string id, ProductDto productDto)
+        {
+            if (string.IsNullOrWhiteSpace(id))
+                throw new ArgumentException("Invalid product id.", nameof(id));
+
+            var productToUpdate = await _context.Product
+                .FirstOrDefaultAsync(p => p.Id == id);
+
+            if (productToUpdate == null)
+                return null;
+            productToUpdate.Name = productDto.Name;
+            productToUpdate.Price = productDto.Price;
+           // productToUpdate.ImagePath=productDto.ImagePath;
+            // Copies fields from productDto into productToUpdate
+           // _mapper.Map(productDto, productToUpdate);
+
+            await _context.SaveChangesAsync();
+
+            return productToUpdate;
         }
     }
 }

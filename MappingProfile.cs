@@ -10,9 +10,9 @@ namespace SecureApi
         {
             CreateMap<Product, ProductDto>()
           .ForMember(dest => dest.ImageUrl, opt => opt.Ignore()) // Set manually
-         .ForMember(dest => dest.Image, opt => opt.Ignore())
+         //.ForMember(dest => dest.Image, opt => opt.Ignore())
 
-          .ForMember(dest => dest.DiscountPercentage, opt => opt.Ignore());
+          .ForMember(dest => dest.DiscountPercentage, opt => opt.Ignore()).ReverseMap();
 
             ; // Not mapped from Product
             CreateMap<CategoryDto, Category>()

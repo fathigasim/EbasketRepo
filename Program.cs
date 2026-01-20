@@ -1,8 +1,11 @@
-using AutoMapper;
+﻿using AutoMapper;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Identity;
+using Microsoft.AspNetCore.Localization;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.FileProviders;
+using Microsoft.Extensions.Localization;
+using Microsoft.Extensions.Options;
 using Microsoft.IdentityModel.Tokens;
 using Microsoft.OpenApi.Models;
 using SecureApi;
@@ -10,13 +13,31 @@ using SecureApi.Configuration;
 using SecureApi.Data;
 using SecureApi.Middleware;
 using SecureApi.Models;
+using SecureApi.Resources;
 using SecureApi.Services;
 using SecureApi.Services.Interfaces;
+using System.Globalization;
 using System.Security.Claims;
 using System.Text;
 
 var builder = WebApplication.CreateBuilder(args);
+builder.Services.AddLocalization(options =>
+{
+    options.ResourcesPath = "Resources";
+});
+builder.Services.AddControllers().AddViewLocalization().AddDataAnnotationsLocalization(options =>
+{
+    options.DataAnnotationLocalizerProvider = (type, factory) =>
+    {
+        // Specify the shared resource type for DataAnnotations
+        var assemblyName = new System.Reflection.AssemblyName(typeof(CommonResources).Assembly.FullName!);
+        return factory.Create("CommonResources", assemblyName.Name!);
 
+    };
+});
+// 2. Configure supported cultures
+const string defaultCulture = "en";
+var supportedCultures = new[] { "en", "ar" };
 builder.Services.Configure<SmtpSettings>(
     builder.Configuration.GetSection("SmtpSettings"));
 
@@ -80,7 +101,8 @@ builder.Services.AddAuthentication(options =>
     };
     
 });
-
+// add this line if using validation/localizer
+builder.Services.AddSingleton<IStringLocalizerFactory, ResourceManagerStringLocalizerFactory>();
 // Add Authorization
 builder.Services.AddAuthorization();
 
@@ -98,10 +120,18 @@ builder.Services.AddScoped<IOrderService, OrderService>();
 builder.Services.AddTransient<IEmailSender, EmailSender>();
 builder.Services.AddScoped<StockService>();
 
-builder.Services.AddHttpContextAccessor(); 
+builder.Services.AddHttpContextAccessor();
+
+builder.Services.Configure<RequestLocalizationOptions>(options =>
+{
+    options.DefaultRequestCulture = new RequestCulture(defaultCulture);
+    options.SupportedCultures = supportedCultures.Select(c => new CultureInfo(c)).ToList();
+    options.SupportedUICultures = supportedCultures.Select(c => new CultureInfo(c)).ToList();
+});
 
 // Add Controllers
-builder.Services.AddControllers();
+
+
 
 // Add CORS
 builder.Services.AddCors(options =>
@@ -182,6 +212,10 @@ else
     app.UseMiddleware<GlobalExceptionMiddleware>(); // Custom middleware
     app.UseHsts();
 }
+// Add this to respect Accept-Language
+// ✅ Add RequestLocalization EARLY in the pipeline
+var locOptions = app.Services.GetRequiredService<IOptions<RequestLocalizationOptions>>().Value;
+app.UseRequestLocalization(locOptions);
 app.UseHttpsRedirection();
 app.UseDefaultFiles(); // serves index.html automatically
 app.UseStaticFiles(new StaticFileOptions

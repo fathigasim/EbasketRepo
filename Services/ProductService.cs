@@ -96,25 +96,54 @@ namespace SecureApi.Services
           
         }
 
-        public async Task<Product> UpdateProductAsync(string id, ProductDto productDto)
+        public async Task UpdateProductAsync(string id, ProductDto productDto)
         {
             if (string.IsNullOrWhiteSpace(id))
                 throw new ArgumentException("Invalid product id.", nameof(id));
 
-            var productToUpdate = await _context.Product
+            var productToUpdate = await _context.Product.AsNoTracking()
                 .FirstOrDefaultAsync(p => p.Id == id);
 
             if (productToUpdate == null)
-                return null;
+                throw new ArgumentNullException("Invalid product id.", nameof(productToUpdate));
+
+
+            var sourcefolder = Path.Combine(Directory.GetCurrentDirectory(), "Img");
+            Directory.CreateDirectory(sourcefolder); // Ensure folder exists
+
+            var oldImagePath = Path.Combine(sourcefolder, productToUpdate.ImagePath);
+
+            if (productDto.Image != null && productDto.Image.Length > 0)
+            {
+                // Delete old image if exists
+                if (File.Exists(oldImagePath))
+                {
+                    File.Delete(oldImagePath);
+                }
+
+                // Generate new name
+                var extension = Path.GetExtension(productDto.Image.FileName);
+                var filename = Guid.NewGuid().ToString("N").Substring(0, 8) + extension;
+                var newImagePath = Path.Combine(sourcefolder, filename);
+
+                // Save new image
+                using (var filestream = new FileStream(newImagePath, FileMode.Create))
+                {
+                    await productDto.Image.CopyToAsync(filestream);
+                }
+
+                productToUpdate.ImagePath = filename;
+            }
+
+            // Update other fields
             productToUpdate.Name = productDto.Name;
             productToUpdate.Price = productDto.Price;
-           // productToUpdate.ImagePath=productDto.ImagePath;
-            // Copies fields from productDto into productToUpdate
-           // _mapper.Map(productDto, productToUpdate);
-
+            productToUpdate.Stock = productDto.Stock;
+            // Save changes
+            _context.Product.Update(productToUpdate); // Ensure EF is tracking
             await _context.SaveChangesAsync();
 
-            return productToUpdate;
+           
         }
     }
 }

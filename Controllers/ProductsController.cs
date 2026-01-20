@@ -1,6 +1,7 @@
 ﻿using AutoMapper;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http;
+using Microsoft.AspNetCore.Http.HttpResults;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Caching.Memory;
@@ -20,13 +21,14 @@ namespace SecureApi.Controllers
     {
         IProductService _productService;
         IMapper mapper;
+        IStringLocalizer<ProductsController> _localizer;
         public ProductsController(ApplicationDbContext _dbContext, IMapper _mapper
-            , IProductService productService
+            , IProductService productService, IStringLocalizer<ProductsController> localizer
           )
         {
             _productService = productService;
             mapper = _mapper;
-           
+           _localizer = localizer;  
         }
        // [Authorize(Roles = "Admin,User")]
         //[Authorize]
@@ -112,10 +114,8 @@ namespace SecureApi.Controllers
             {
 
               await  _productService.PostProudct(productdto);
-               // var successMsg = _localizer["ProductAdd"].Value;
-                return Ok(new { message =  "Success"
-                 // successMsg 
-                });
+              var successMsg = _localizer["ProductAdd"].Value;
+                return Ok(new { message =  $"{productdto.Name} "+ $"{successMsg}" });
             }
             catch (Exception)
             {
@@ -130,9 +130,15 @@ namespace SecureApi.Controllers
         [HttpPut("{id}")]
         public async Task<IActionResult> Put(string id, ProductDto productdto)
         {
-            var result = await _productService.UpdateProductAsync(id, productdto);
-
-            return Ok(result); // ✅ return the updated product
+            try
+            {
+                await _productService.UpdateProductAsync(id, productdto);
+                return Ok(new {message=$"{productdto.Name} Updated Successfully"});
+            }
+            catch { 
+              return BadRequest(new { message = "Some went wrong" });
+            }
+            
         }
 
         //[HttpDelete("{id}")]

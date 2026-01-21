@@ -38,12 +38,13 @@ builder.Services.AddControllers().AddViewLocalization().AddDataAnnotationsLocali
 // 2. Configure supported cultures
 const string defaultCulture = "en";
 var supportedCultures = new[] { "en", "ar" };
-builder.Services.Configure<SmtpSettings>(
-    builder.Configuration.GetSection("SmtpSettings"));
 
 
 // Add configuration
 builder.Services.Configure<JwtSettings>(builder.Configuration.GetSection("JwtSettings"));
+builder.Services.Configure<SmtpSettings>(builder.Configuration.GetSection("SmtpSettings"));
+
+//builder.Services.Configure<JwtSettings>(builder.Configuration.GetSection("JwtSettings"));
 var jwtSettings = builder.Configuration.GetSection("JwtSettings").Get<JwtSettings>();
 
 // Add DbContext

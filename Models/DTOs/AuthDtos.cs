@@ -4,19 +4,19 @@ namespace SecureApi.Models.DTOs;
 
 public class RegisterDto
 {
-    [Required]
-    [EmailAddress]
+    [Required(ErrorMessage ="EmailRequired")]
+    [EmailAddress(ErrorMessage ="NotValidEmail")]
     public string Email { get; set; } = string.Empty;
 
-    [Required]
-    [StringLength(100, MinimumLength = 6)]
+    [Required(ErrorMessage ="PassRequired")]
+    [StringLength(100, MinimumLength = 6,ErrorMessage = "NotValidPassword")]
     public string Password { get; set; } = string.Empty;
 
     [Required]
-    [Compare("Password")]
+    [Compare("Password", ErrorMessage = "NotIdenticalPassword")]
     public string ConfirmPassword { get; set; } = string.Empty;
 
-    [Required]
+    [Required (ErrorMessage = "UserRequired")]
     [StringLength(50)]
     public string UserName { get; set; } = string.Empty;
 }

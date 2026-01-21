@@ -61,11 +61,56 @@ namespace SecureApi.Resources {
         }
         
         /// <summary>
-        ///   Looks up a localized string similar to Product is Required.
+        ///   Looks up a localized string similar to Email is required .
         /// </summary>
-        public static string ProductRequired {
+        public static string EmailRequired {
             get {
-                return ResourceManager.GetString("ProductRequired", resourceCulture);
+                return ResourceManager.GetString("EmailRequired", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Not Identical Password.
+        /// </summary>
+        public static string NotIdenticalPassword {
+            get {
+                return ResourceManager.GetString("NotIdenticalPassword", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Not Valid Email Address.
+        /// </summary>
+        public static string NotValidEmail {
+            get {
+                return ResourceManager.GetString("NotValidEmail", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Not Valid Password.
+        /// </summary>
+        public static string NotValidPassword {
+            get {
+                return ResourceManager.GetString("NotValidPassword", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Password is required.
+        /// </summary>
+        public static string PassRequired {
+            get {
+                return ResourceManager.GetString("PassRequired", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Enter username.
+        /// </summary>
+        public static string UserRequired {
+            get {
+                return ResourceManager.GetString("UserRequired", resourceCulture);
             }
         }
     }

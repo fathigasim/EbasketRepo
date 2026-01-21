@@ -968,7 +968,7 @@ public class AuthService : IAuthService
         var encodedToken = WebUtility.UrlEncode(token);
 
         // Build frontend URL
-        var clientUrl = _configuration["AppSettings:FrontendUrl"] ?? "http://localhost:5173";
+        var clientUrl = _configuration["Frontend:FrontendUrl"] ?? "http://localhost:5173";
         var callbackUrl = $"{clientUrl}/confirm-email?userId={user.Id}&token={encodedToken}";
 
         // Send email

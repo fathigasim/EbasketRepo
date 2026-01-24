@@ -23,11 +23,12 @@ public class RegisterDto
 
 public class LoginDto
 {
-    [Required]
-    [EmailAddress]
+    [Required(ErrorMessage = "EmailRequired")]
+    [EmailAddress(ErrorMessage = "NotValidEmail")]
     public string Email { get; set; } = string.Empty;
 
-    [Required]
+    [Required(ErrorMessage = "PassRequired")]
+    [StringLength(100, MinimumLength = 6, ErrorMessage = "NotValidPassword")]
     public string Password { get; set; } = string.Empty;
 }
 

@@ -216,15 +216,15 @@ public class AuthController : ControllerBase
         }
 
         // Prevent deleting other users' accounts
-        //if (currentEmail != deleteDto.Email)
-        //{
-        //    _logger.LogWarning(
-        //        "User {CurrentEmail} attempted to delete account {TargetEmail}",
-        //        currentEmail,
-        //        deleteDto.Email);
+        if (currentEmail != deleteDto.Email)
+        {
+            _logger.LogWarning(
+                "User {CurrentEmail} attempted to delete account {TargetEmail}",
+                currentEmail,
+                deleteDto.Email);
 
-        //    return Forbid();
-        //}
+            return Forbid();
+        }
 
         var user = await _userManager.FindByEmailAsync(deleteDto.Email);
 

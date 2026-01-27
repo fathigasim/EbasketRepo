@@ -167,7 +167,7 @@ namespace SecureApi.Controllers
 
                 // 6. Configure Stripe
                 StripeConfiguration.ApiKey = _configuration["Stripe:StripeKey"];
-                var domain = _configuration["Stripe:FrontendUrl"];
+                var domain = _configuration["Frontend:FrontendUrl"];
 
                 if (string.IsNullOrWhiteSpace(domain))
                 {

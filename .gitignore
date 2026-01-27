@@ -70,5 +70,5 @@ appsettings.Production.json
 *.db
 *.db-shm
 *.db-wal
-
+*.json
 appsettings.json

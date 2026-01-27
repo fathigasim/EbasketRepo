@@ -4,7 +4,7 @@ using SecureApi.Models.DTOs;
 
 namespace SecureApi.Controllers;
 
-[Authorize]
+//[Authorize]
 [ApiController]
 [Route("api/[controller]")]
 public class WeatherForecastController : ControllerBase

@@ -9,7 +9,7 @@
   </PropertyGroup>
 
 <ItemGroup>
-  <Content Include="wwwroot\Img\**\*">
+  <Content Include="Img\**\*">
     <CopyToPublishDirectory>PreserveNewest</CopyToPublishDirectory>
   </Content>
 </ItemGroup>
@@ -54,6 +54,10 @@
       <Generator>PublicResXFileCodeGenerator</Generator>
       <LastGenOutput>ProductsController.Designer.cs</LastGenOutput>
     </EmbeddedResource>
+  </ItemGroup>
+
+  <ItemGroup>
+    <Folder Include="wwwroot\" />
   </ItemGroup>
 
 </Project>

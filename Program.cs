@@ -1,17 +1,78 @@
-﻿using Microsoft.AspNetCore.Localization;
+﻿using Microsoft.AspNetCore.Authentication.JwtBearer;
+using Microsoft.AspNetCore.Identity;
+using Microsoft.AspNetCore.Localization;
+using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.FileProviders;
 using Microsoft.Extensions.Options;
+using Microsoft.IdentityModel.Tokens;
+using SecureApi;
+using SecureApi.Configuration;
+using SecureApi.Data;
+using SecureApi.Models;
+using SecureApi.Services;
+using SecureApi.Services.Interfaces;
 using System.Globalization;
+using System.Text;
 
 var builder = WebApplication.CreateBuilder(args);
+builder.Services.Configure<JwtSettings>(
+    builder.Configuration.GetSection("JwtSettings"));
+builder.Services.Configure<SmtpSettings>(
+    builder.Configuration.GetSection("SmtpSettings"));
 
+builder.Services.AddDbContext<ApplicationDbContext>(options =>
+{
+    options.UseSqlServer(builder.Configuration.GetConnectionString("DefaultConnection"));
+});
+builder.Services.AddIdentity<ApplicationUser, IdentityRole>(options =>
+{
+    options.Password.RequireDigit = true;
+    options.Password.RequireLowercase = true;
+    options.Password.RequireUppercase = true;
+    options.Password.RequireNonAlphanumeric = false;
+    options.Password.RequiredLength = 6;
+    options.User.RequireUniqueEmail = true;
+}).AddEntityFrameworkStores<ApplicationDbContext>()  // ✅ Required
+.AddDefaultTokenProviders();
+// ===== Swagger =====
+builder.Services.AddSwaggerGen();
 // ===== Localization =====
-builder.Services.AddLocalization(options => { options.ResourcesPath = "Resources"; });
+builder.Services.AddLocalization(options => options.ResourcesPath = "Resources");
 
 builder.Services.AddControllers()
     .AddViewLocalization()
     .AddDataAnnotationsLocalization();
+builder.Services.AddAuthentication(options =>
+{
+    options.DefaultAuthenticateScheme = JwtBearerDefaults.AuthenticationScheme;
+    options.DefaultChallengeScheme = JwtBearerDefaults.AuthenticationScheme;
+})
+.AddJwtBearer(options =>
+{
+    options.TokenValidationParameters = new TokenValidationParameters
+    {
+        ValidateIssuer = false,
+        ValidateAudience = false,
+        ValidateLifetime = true,
+        ValidateIssuerSigningKey = true,
+        ValidIssuer = builder.Configuration["JwtSettings:Issuer"],
+        ValidAudience = builder.Configuration["JwtSettings:Audience"],
+        IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(builder.Configuration["JwtSettings:SecretKey"]))
+    };
+});
 
+// ===== Services Registration =====
+builder.Services.AddScoped<IAuthService, AuthService>();
+builder.Services.AddScoped<IProductService, ProductService>();
+builder.Services.AddScoped<ICategoryService, CategroyService>();
+builder.Services.AddScoped<IOrderService, OrderService>();
+builder.Services.AddScoped<ITokenService, TokenService>();
+builder.Services.AddScoped<IBasketService, BasketService>();
+builder.Services.AddScoped<StockService>();
+builder.Services.AddScoped<IUserManagementService, UserManagementService>();
+builder.Services.AddScoped<IEmailSender, EmailSender>();
+builder.Services.AddHttpContextAccessor();
+builder.Services.AddAutoMapper(typeof(MappingProfile));
 // ===== CORS =====
 builder.Services.AddCors(options =>
 {
@@ -23,30 +84,40 @@ builder.Services.AddCors(options =>
               .AllowCredentials();
     });
 
-    options.AddPolicy("ProdCors", policy =>
+    //options.AddPolicy("ProdCors", policy =>
+    //{
+    //    policy.WithOrigins(builder.Configuration["Frontend:FrontendUrl"])
+    //          .AllowAnyMethod()
+    //          .AllowAnyHeader()
+    //          .AllowCredentials();
+    //});
+});
+
+// ===== Request Localization =====
+var supportedCultures = new[] { "en", "ar" };
+
+builder.Services.Configure<RequestLocalizationOptions>(options =>
+{
+    var cultures = supportedCultures.Select(c => new CultureInfo(c)).ToList();
+
+    options.DefaultRequestCulture = new RequestCulture("en");
+    options.SupportedCultures = cultures;
+    options.SupportedUICultures = cultures;
+
+    options.RequestCultureProviders = new List<IRequestCultureProvider>
     {
-        policy.WithOrigins(builder.Configuration["Frontend:FrontendUrl"])
-              .AllowAnyMethod()
-              .AllowAnyHeader()
-              .AllowCredentials();
-    });
+        new QueryStringRequestCultureProvider(),
+        new CookieRequestCultureProvider(),
+        new AcceptLanguageHeaderRequestCultureProvider()
+    };
 });
 
 // ===== JWT, Identity, DbContext, AutoMapper, Services etc =====
 // (Keep your existing configuration here)
 
-// ===== Request Localization =====
-var supportedCultures = new[] { "en", "ar" };
-builder.Services.Configure<RequestLocalizationOptions>(options =>
-{
-    options.DefaultRequestCulture = new RequestCulture("en");
-    options.SupportedCultures = supportedCultures.Select(c => new CultureInfo(c)).ToList();
-    options.SupportedUICultures = supportedCultures.Select(c => new CultureInfo(c)).ToList();
-});
-
 var app = builder.Build();
 
-// ===== Pipeline =====
+// ===== Development Tools =====
 if (app.Environment.IsDevelopment())
 {
     app.UseSwagger();
@@ -55,38 +126,37 @@ if (app.Environment.IsDevelopment())
 }
 else
 {
-    app.UseCors("ProdCors");
+    // app.UseCors("ProdCors");
     app.UseHsts();
-    // app.UseMiddleware<GlobalExceptionMiddleware>(); // optional
 }
 
-app.UseHttpsRedirection();
+//app.UseHttpsRedirection();
 
-// ===== Serve API static files =====
-
-
-// ===== Serve React SPA from wwwroot/frontend =====
-var frontendPath = Path.Combine(Directory.GetCurrentDirectory(), "wwwroot", "frontend");
-
-app.UseStaticFiles(new StaticFileOptions
-{
-    FileProvider = new PhysicalFileProvider(frontendPath),
-    RequestPath = "" // Serve from root URL
-});
-
-// ===== SPA fallback for React routing =====
-app.MapFallbackToFile("index.html", new StaticFileOptions
-{
-    FileProvider = new PhysicalFileProvider(frontendPath)
-});
-
-// ===== Request Localization =====
-var locOptions = app.Services.GetRequiredService<IOptions<RequestLocalizationOptions>>().Value;
+// ===== Request Localization (early) =====
+var locOptions = app.Services
+    .GetRequiredService<IOptions<RequestLocalizationOptions>>().Value;
 app.UseRequestLocalization(locOptions);
 
+// ===== Static Files =====
+app.UseDefaultFiles();// Important: finds index.html automatically
+app.UseStaticFiles(); // Serves files from wwwroot
+var imgPath=Path.Combine(Directory.GetCurrentDirectory(), "Img");
+Console.WriteLine("Serving static images from: " + imgPath);
+app.UseStaticFiles(new StaticFileOptions
+{
+    FileProvider = new PhysicalFileProvider(
+        Path.Combine(Directory.GetCurrentDirectory(), "Img")),
+    RequestPath = "/StaticImages"
+});
+
+// ===== Authentication / Authorization =====
 app.UseAuthentication();
 app.UseAuthorization();
 
+// ===== IMPORTANT: Map Controllers BEFORE Fallback =====
 app.MapControllers();
+
+// ===== SPA Fallback (LAST - only for unmatched client routes) =====
+app.MapFallbackToFile("index.html");
 
 app.Run();

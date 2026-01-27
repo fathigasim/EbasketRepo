@@ -1258,7 +1258,7 @@ public class AuthService : IAuthService
             var encodedToken = WebEncoders.Base64UrlEncode(Encoding.UTF8.GetBytes(token));
 
             // Build reset link
-            var frontendUrl = _configuration["AppSettings:FrontendUrl"] ?? "http://localhost:5173";
+            var frontendUrl = _configuration["Frontend:FrontendUrl"] ?? "http://localhost:5173";
             var resetLink = $"{frontendUrl}/reset-password?userId={user.Id}&token={encodedToken}";
 
             // Send email

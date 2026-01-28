@@ -70,6 +70,33 @@ namespace SecureApi.Resources {
         }
         
         /// <summary>
+        ///   Looks up a localized string similar to Image is required.
+        /// </summary>
+        public static string Image_is_Required {
+            get {
+                return ResourceManager.GetString("Image_is_Required", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Price less or bigger than expected.
+        /// </summary>
+        public static string Less_than_or_exceeded_range_price {
+            get {
+                return ResourceManager.GetString("Less_than_or_exceeded_range_price", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Name is required.
+        /// </summary>
+        public static string Name_is_Required {
+            get {
+                return ResourceManager.GetString("Name_is_Required", resourceCulture);
+            }
+        }
+        
+        /// <summary>
         ///   Looks up a localized string similar to Not Identical Password.
         /// </summary>
         public static string NotIdenticalPassword {
@@ -111,6 +138,15 @@ namespace SecureApi.Resources {
         public static string UserRequired {
             get {
                 return ResourceManager.GetString("UserRequired", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Wrong format entry.
+        /// </summary>
+        public static string Wrong_Format_Entry {
+            get {
+                return ResourceManager.GetString("Wrong_Format_Entry", resourceCulture);
             }
         }
     }

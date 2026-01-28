@@ -13,10 +13,13 @@
     <CopyToPublishDirectory>PreserveNewest</CopyToPublishDirectory>
   </Content>
 </ItemGroup>
+	<ItemGroup>
+		<Content Remove="web.config" />
+	</ItemGroup>
 
-	 
 
-  <ItemGroup>
+
+	<ItemGroup>
     <PackageReference Include="AutoMapper.Extensions.Microsoft.DependencyInjection" Version="12.0.0" />
     <PackageReference Include="MailKit" Version="4.14.1" />
     <PackageReference Include="Microsoft.AspNetCore.Authentication.JwtBearer" Version="8.0.0" />

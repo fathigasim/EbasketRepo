@@ -9,6 +9,7 @@ using SecureApi;
 using SecureApi.Configuration;
 using SecureApi.Data;
 using SecureApi.Models;
+using SecureApi.Resources;
 using SecureApi.Services;
 using SecureApi.Services.Interfaces;
 using System.Globalization;
@@ -41,7 +42,16 @@ builder.Services.AddLocalization(options => options.ResourcesPath = "Resources")
 
 builder.Services.AddControllers()
     .AddViewLocalization()
-    .AddDataAnnotationsLocalization();
+    .AddDataAnnotationsLocalization(options =>
+    {
+        options.DataAnnotationLocalizerProvider = (type, factory) =>
+        {
+            // Specify the shared resource type for DataAnnotations
+            var assemblyName = new System.Reflection.AssemblyName(typeof(CommonResources).Assembly.FullName!);
+            return factory.Create("CommonResources", assemblyName.Name!);
+
+        };
+    });
 builder.Services.AddAuthentication(options =>
 {
     options.DefaultAuthenticateScheme = JwtBearerDefaults.AuthenticationScheme;

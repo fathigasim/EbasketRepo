@@ -7,15 +7,17 @@ namespace SecureApi.Models.DTOs
     {
      
         public string? Id { get; set; } 
-        //[Display(Name="Name"),Required(ErrorMessage ="Name_is_Required")]
+        [Required(ErrorMessage ="Name_is_Required")]
         public string? Name { get; set; }
-       // [Display(Name = "Name"), Range(1,20,ErrorMessage ="Less_than_or_exceeded_range_price")]
+       [Range(1,20,ErrorMessage ="Less_than_or_exceeded_range_price")]
+        [DataType(DataType.Currency, ErrorMessage = "Wrong_Format_Entry")]
         public decimal Price { get; set; }
-
+        [Required(ErrorMessage = "Image_is_Required")]
         public IFormFile? Image { get; set; }
         public string? ImageUrl { get; set; }
         public string? ImagePath { get; set; }
         public bool IsActive { get; set; } = true;
+        [Range(1, 9999, ErrorMessage = "Less_than_or_exceeded_range_price")]
         public int? Stock { get; set; }
         public int? DiscountPercentage { get; set; }
         public bool IsOnSale { get; set; } = true;

@@ -135,4 +135,16 @@
   <data name="UserRequired" xml:space="preserve">
     <value>Enter username</value>
   </data>
+  <data name="Image_is_Required" xml:space="preserve">
+    <value>Image is required</value>
+  </data>
+  <data name="Less_than_or_exceeded_range_price" xml:space="preserve">
+    <value>Price less or bigger than expected</value>
+  </data>
+  <data name="Name_is_Required" xml:space="preserve">
+    <value>Name is required</value>
+  </data>
+  <data name="Wrong_Format_Entry" xml:space="preserve">
+    <value>Wrong format entry</value>
+  </data>
 </root>

@@ -135,4 +135,16 @@
   <data name="UserRequired" xml:space="preserve">
     <value>ادخل المستخدم</value>
   </data>
+  <data name="Image_is_Required" xml:space="preserve">
+    <value>ادخل الصورة</value>
+  </data>
+  <data name="Less_than_or_exceeded_range_price" xml:space="preserve">
+    <value>السعر اقل او اعلي من المطلوب</value>
+  </data>
+  <data name="Name_is_Required" xml:space="preserve">
+    <value>الاسم مطلوب</value>
+  </data>
+  <data name="Wrong_Format_Entry" xml:space="preserve">
+    <value>نوع ادخال خاطئ</value>
+  </data>
 </root>

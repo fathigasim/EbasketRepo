@@ -49,7 +49,7 @@ namespace SecureApi.Services
                     {
                         Expires = DateTimeOffset.UtcNow.Add(_cookieExpiry),
                         HttpOnly = true,
-                        SameSite = SameSiteMode.None, // IMPORTANT for cross-site cookies
+                        SameSite = SameSiteMode.Lax, // IMPORTANT for cross-site cookies
                         Secure = true,
                         Path = "/"
                     };

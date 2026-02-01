@@ -72,3 +72,8 @@ appsettings.Production.json
 *.db-wal
 *.json
 appsettings.json
+appsettings.Production.json
+Dockerfile
+.dockerignore
+docker-compose.yml
+.env

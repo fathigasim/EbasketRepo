@@ -246,6 +246,7 @@ namespace SecureApi.Controllers
         }
 
         [HttpPost("webhook")]
+        [AllowAnonymous]
         [IgnoreAntiforgeryToken]
         public async Task<IActionResult> StripeWebhook()
         {

@@ -30,7 +30,8 @@ public class ApplicationDbContext : IdentityDbContext<ApplicationUser>
         builder.Entity<Product>().HasOne(p => p.Category)
             .WithMany(p => p.Products).HasForeignKey(p => p.CategoryId).IsRequired(false)
             .OnDelete(DeleteBehavior.Restrict);
-        ;
+        builder.Entity<Product>().Property(p => p.Price)
+                .HasColumnType("decimal(18,2)");
         builder.Entity<BasketItems>().HasOne(p => p.Basket)
             .WithMany(p => p.BasketItems).HasForeignKey(p => p.BasketId)
             .IsRequired().OnDelete(DeleteBehavior.Cascade);
@@ -43,8 +44,13 @@ public class ApplicationDbContext : IdentityDbContext<ApplicationUser>
             .WithMany(p => p.OrderItems).HasForeignKey(p => p.OrderId)
             .IsRequired().OnDelete(DeleteBehavior.Cascade);
 
-        // Order Configuration
-        builder.Entity<Order>(entity =>
+
+        builder.Entity<Product>(entity =>
+        {
+            entity.Property(e => e.Price).HasPrecision(18, 2).IsRequired();
+        });
+            // Order Configuration
+            builder.Entity<Order>(entity =>
         {
             entity.HasKey(e => e.Id);
 

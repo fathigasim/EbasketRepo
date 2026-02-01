@@ -16,6 +16,8 @@ using System.Globalization;
 using System.Text;
 
 var builder = WebApplication.CreateBuilder(args);
+
+
 builder.Services.Configure<JwtSettings>(
     builder.Configuration.GetSection("JwtSettings"));
 builder.Services.Configure<SmtpSettings>(
@@ -23,7 +25,7 @@ builder.Services.Configure<SmtpSettings>(
 
 builder.Services.AddDbContext<ApplicationDbContext>(options =>
 {
-    options.UseSqlServer(builder.Configuration.GetConnectionString("DefaultConnection"));
+    options.UseSqlServer(builder.Configuration.GetConnectionString("Default"));
 });
 builder.Services.AddIdentity<ApplicationUser, IdentityRole>(options =>
 {
@@ -59,8 +61,11 @@ builder.Services.AddAuthentication(options =>
 })
 .AddJwtBearer(options =>
 {
+    options.SaveToken = true;
+    options.RequireHttpsMetadata = true;
     options.TokenValidationParameters = new TokenValidationParameters
     {
+
         ValidateIssuer = false,
         ValidateAudience = false,
         ValidateLifetime = true,
@@ -126,6 +131,35 @@ builder.Services.Configure<RequestLocalizationOptions>(options =>
 // (Keep your existing configuration here)
 
 var app = builder.Build();
+// ===== APPLY MIGRATIONS AUTOMATICALLY =====
+using (var scope = app.Services.CreateScope())
+{
+    var services = scope.ServiceProvider;
+    var logger = services.GetRequiredService<ILogger<Program>>();
+
+    try
+    {
+        var context = services.GetRequiredService<ApplicationDbContext>();
+
+        logger.LogInformation("Checking database connection...");
+
+        var canConnect = await context.Database.CanConnectAsync();
+
+        if (canConnect)
+        {
+            logger.LogInformation("Database connection OK — using existing database");
+        }
+        else
+        {
+            logger.LogWarning("Cannot connect to database — make sure it is restored");
+        }
+    }
+    catch (Exception ex)
+    {
+        logger.LogError(ex, "Database connection check failed");
+        // do not throw — allow app to start
+    }
+}
 
 // ===== Development Tools =====
 if (app.Environment.IsDevelopment())

@@ -1,6 +1,7 @@
 ﻿using AutoMapper;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Caching.Distributed;
 using SecureApi.Data;
 using SecureApi.Models;
 using SecureApi.Models.DTOs;
@@ -15,16 +16,18 @@ namespace SecureApi.Controllers
     public class CategoryController : ControllerBase
     {
         ICategoryService _categoryService;
+       
         public CategoryController(ICategoryService categoryService)
         {
               _categoryService = categoryService;
+          
         }
         // GET: api/<CategoryController>
         [HttpGet]
         public async Task<IActionResult> Get()
         {
-
-          var model=  await _categoryService.GetCategory();
+           
+            var model=  await _categoryService.GetCategory();
           
             return Ok(model);
         }

@@ -44,7 +44,7 @@ namespace SecureApi.Controllers
             catch (Exception ex)
             {
 
-                return BadRequest("some went wrong");
+                return BadRequest($"some went wrong+{ex.Message}");
 
             }
 

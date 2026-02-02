@@ -184,7 +184,7 @@ namespace SecureApi.Controllers
                         PriceData = new SessionLineItemPriceDataOptions
                         {
                             Currency = "sar",
-                            UnitAmount = (long)(i.Price * 100),
+                            UnitAmount = (long)Math.Round(i.Price * 100, MidpointRounding.AwayFromZero) ,//(long)(i.Price * 100),
                             ProductData = new SessionLineItemPriceDataProductDataOptions
                             {
                                 Name = i.ProductName,

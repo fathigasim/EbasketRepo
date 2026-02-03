@@ -141,16 +141,12 @@ namespace SecureApi.Controllers
             
         }
 
-        //[HttpDelete("{id}")]
-        //public async Task<IActionResult> Delete(string id)
-        //{
-        //    if (string.IsNullOrEmpty(id)) return BadRequest("Product not found");
-        //    var model = await dbContext.Product.Where(p => p.Id.Equals(id)).FirstOrDefaultAsync();
-
-        //    dbContext.Product.Remove(model);
-        //    await dbContext.SaveChangesAsync();
-        //    return Ok();
-        //}
+        [HttpDelete("{id}")]
+        public async Task<IActionResult> Delete(string id)
+        {
+           var result= await _productService.DeleteAsync(id);
+            return Ok(result);
+        }
 
         //[HttpGet("price")]
         //public IActionResult GetPrice()

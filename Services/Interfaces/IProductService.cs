@@ -10,5 +10,7 @@ namespace SecureApi.Services.Interfaces
 
       public  Task PostProudct(ProductDto productdto);
       public  Task UpdateProductAsync(string id, ProductDto productDto);
+
+        public  Task<ProductDeleteDto> DeleteAsync(string id);
     }
 }

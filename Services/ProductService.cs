@@ -24,7 +24,7 @@ namespace SecureApi.Services
         public async Task<PagedResult<ProductDto>> Get(string? q, string? category,string? sort, int page, int pageSize)
         {
             var Request = _contextAccessor?.HttpContext?.Request;
-            var query = _context.Product.AsNoTracking().AsQueryable();
+            var query = _context.Product.AsQueryable();
             if (!string.IsNullOrEmpty(q))
                 query = query.Where(p => p.Name.Contains(q));
             if (!string.IsNullOrEmpty(category))
@@ -95,13 +95,22 @@ namespace SecureApi.Services
             
           
         }
+        public async Task<ProductDeleteDto> DeleteAsync(string id)
+        {
+            if (string.IsNullOrEmpty(id))
+                return new ProductDeleteDto { Message ="Product not found" };
+            var model = await _context.Product.Where(p => p.Id.Equals(id)).FirstOrDefaultAsync();
 
+            _context.Product.Remove(model);
+            await _context.SaveChangesAsync();
+            return new ProductDeleteDto { Message = $"product {model.Name} deleted successfully" };
+        }
         public async Task UpdateProductAsync(string id, ProductDto productDto)
         {
             if (string.IsNullOrWhiteSpace(id))
                 throw new ArgumentException("Invalid product id.", nameof(id));
 
-            var productToUpdate = await _context.Product.AsNoTracking()
+            var productToUpdate = await _context.Product
                 .FirstOrDefaultAsync(p => p.Id == id);
 
             if (productToUpdate == null)
@@ -123,7 +132,7 @@ namespace SecureApi.Services
 
                 // Generate new name
                 var extension = Path.GetExtension(productDto.Image.FileName);
-                var filename = Guid.NewGuid().ToString("N").Substring(0, 8) + extension;
+                var filename = Guid.NewGuid().ToString("N").Substring(0, 8) + productDto?.Image?.FileName + extension;
                 var newImagePath = Path.Combine(sourcefolder, filename);
 
                 // Save new image

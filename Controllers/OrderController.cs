@@ -1,6 +1,7 @@
 ﻿using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using SecureApi.Models;
+using SecureApi.Publisher;
 using SecureApi.Services;
 
 namespace SecureApi.Controllers
@@ -77,6 +78,15 @@ namespace SecureApi.Controllers
         //    return Ok();
 
         //}
+//        await _orderPublisher.PublishOrder(new OrderCreatedEvent
+//{
+//    OrderId = Guid.NewGuid().ToString(),
+//    CustomerEmail = "fathi@example.com",
+//    ProductId = "P001",
+//    Quantity = 2,
+//    Amount = 199.99m,
+//    CreatedAt = DateTime.UtcNow
+//    });
 
     }
 }

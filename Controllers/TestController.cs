@@ -1,5 +1,8 @@
 ﻿using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
+using SecureApi.Models.DTOs;
+using SecureApi.Publisher;
+using SecureApi.SharedContract;
 
 namespace SecureApi.Controllers
 {
@@ -7,16 +10,25 @@ namespace SecureApi.Controllers
     [ApiController]
     public class TestController : ControllerBase
     {
-
-        public TestController()
+        private readonly OrderPublisher orderPublisher;
+        public TestController(OrderPublisher orderPublisher )
         {
-
+            this.orderPublisher = orderPublisher;
         }
-        [HttpGet]
-        public async Task<IActionResult> Data()
+        [HttpPost("Send")]
+        public async Task<IActionResult> Send(OrderCreatedEventDto orderCreatedEventDto)
         {
-            var data = new List<string> { "one", "two", "three" };
-            return Ok(data);
+            OrderCreatedEvent orderCreatedEvent = new OrderCreatedEvent
+            {
+                CustomerEmail = orderCreatedEventDto.CustomerEmail,
+                ProductName = orderCreatedEventDto.ProductName,
+                Amount = orderCreatedEventDto.Amount,
+                Quantity = orderCreatedEventDto.Quantity,
+
+            };
+            await orderPublisher.PublishOrder(orderCreatedEvent);
+            //var data = new List<string> { "one", "two", "three" };
+            return Ok("Order Created Successfully");
         }
     }
 }

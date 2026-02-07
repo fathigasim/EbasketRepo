@@ -1,6 +1,7 @@
 ﻿using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.RateLimiting;
 using SecureApi.Models;
 using SecureApi.Models.DTOs;
 using SecureApi.Services.Interfaces;
@@ -10,6 +11,8 @@ namespace SecureApi.Controllers;
 
 [ApiController]
 [Route("api/[controller]")]
+[EnableRateLimiting("global")]
+
 public class AuthController : ControllerBase
 {
     private readonly IAuthService _authService;

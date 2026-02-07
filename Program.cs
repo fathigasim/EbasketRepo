@@ -14,11 +14,15 @@ using SecureApi.Services;
 using SecureApi.Services.Interfaces;
 using System.Globalization;
 using System.Text;
+using Microsoft.AspNetCore.RateLimiting;
+using System.Threading.RateLimiting;
+using MassTransit;
+using SecureApi.Consumers;
+using SecureApi.Publisher;
 
 var builder = WebApplication.CreateBuilder(args);
 
-Console.WriteLine("ENV = " + builder.Environment.EnvironmentName);
-Console.WriteLine("CS = " + builder.Configuration.GetConnectionString("Default"));
+
 
 builder.Services.Configure<JwtSettings>(
     builder.Configuration.GetSection("JwtSettings"));
@@ -77,8 +81,18 @@ builder.Services.AddAuthentication(options =>
         IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(builder.Configuration["JwtSettings:SecretKey"]))
     };
 });
+builder.Services.AddRateLimiter(o =>
+{
+    o.AddFixedWindowLimiter("global", opt =>
+    {
+        opt.PermitLimit = 100;
+        opt.Window = TimeSpan.FromMinutes(1);
+    });
+});
 
 // ===== Services Registration =====
+//builder.Services.AddHostedService<NotificationWorker>();//If some operations are heavy (email, PDF invoices, shipping), you can move them to background worker
+
 builder.Services.AddScoped<IAuthService, AuthService>();
 builder.Services.AddScoped<IProductService, ProductService>();
 builder.Services.AddScoped<ICategoryService, CategroyService>();
@@ -90,11 +104,62 @@ builder.Services.AddScoped<IUserManagementService, UserManagementService>();
 builder.Services.AddScoped<IEmailSender, EmailSender>();
 builder.Services.AddHttpContextAccessor();
 builder.Services.AddAutoMapper(typeof(MappingProfile));
+builder.Services.AddScoped<OrderPublisher>();
 builder.Services.AddStackExchangeRedisCache(options =>
 {
     options.Configuration = builder.Configuration["Redis:ConnectionString"];
     options.InstanceName = "myapp-redis";
 });
+
+
+    //builder.Services.AddMassTransit(x =>
+    //{
+    //    x.AddConsumer<OrderCreatedConsumer>();
+
+    //    x.UsingRabbitMq((context, cfg) =>
+    //    {
+    //        cfg.Host("myapp-rabbitmq", "/", h =>
+    //        {
+    //            h.Username(builder.Configuration["RABBITMQ_DEFAULT_USER"]);
+    //            h.Password(builder.Configuration["RABBITMQ_DEFAULT_PASS"]);
+    //        });
+    //    });
+    //});
+builder.Services.AddMassTransit(x =>
+{
+    // Register all consumers
+    x.AddConsumer<PaymentConsumer>();
+    x.AddConsumer<InventoryConsumer>();
+    x.AddConsumer<NotificationConsumer>();
+
+    x.UsingRabbitMq((context, cfg) =>
+    {
+        cfg.Host("myapp-rabbitmq", "/", h =>
+        {
+            h.Username(builder.Configuration["RABBITMQ_DEFAULT_USER"]);
+            h.Password(builder.Configuration["RABBITMQ_DEFAULT_PASS"]);
+        });
+
+        // Payment queue
+        cfg.ReceiveEndpoint("payment-service-queue", e =>
+        {
+            e.ConfigureConsumer<PaymentConsumer>(context);
+        });
+
+        // Inventory queue
+        cfg.ReceiveEndpoint("inventory-service-queue", e =>
+        {
+            e.ConfigureConsumer<InventoryConsumer>(context);
+        });
+
+        // Notification queue
+        cfg.ReceiveEndpoint("notification-service-queue", e =>
+        {
+            e.ConfigureConsumer<NotificationConsumer>(context);
+        });
+    });
+});
+
 // ===== CORS =====
 builder.Services.AddCors(options =>
 {
@@ -199,6 +264,7 @@ app.UseStaticFiles(new StaticFileOptions
         Path.Combine(Directory.GetCurrentDirectory(), "Img")),
     RequestPath = "/StaticImages"
 });
+app.UseRateLimiter();
 
 // ===== Authentication / Authorization =====
 app.UseAuthentication();

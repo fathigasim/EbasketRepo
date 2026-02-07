@@ -22,6 +22,12 @@
 	<ItemGroup>
     <PackageReference Include="AutoMapper.Extensions.Microsoft.DependencyInjection" Version="12.0.0" />
     <PackageReference Include="MailKit" Version="4.14.1" />
+
+    <PackageReference Include="RabbitMQ.Client" Version="6.8.1" />
+    <PackageReference Include="MassTransit.RabbitMQ" Version="8.3.0" />
+		<!-- Force downgrade override -->
+
+
     <PackageReference Include="Microsoft.AspNetCore.Authentication.JwtBearer" Version="8.0.0" />
     <PackageReference Include="Microsoft.AspNetCore.Identity.EntityFrameworkCore" Version="8.0.0" />
     <PackageReference Include="Microsoft.AspNetCore.SpaServices.Extensions" Version="8.0.22" />
@@ -36,6 +42,7 @@
     </PackageReference>
     <PackageReference Include="Microsoft.Extensions.Caching.StackExchangeRedis" Version="8.0.0" />
     <PackageReference Include="MimeKit" Version="4.14.0" />
+
     <PackageReference Include="Stripe.net" Version="49.0.0" />
     <PackageReference Include="Swashbuckle.AspNetCore" Version="6.5.0" />
   </ItemGroup>

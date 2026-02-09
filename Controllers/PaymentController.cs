@@ -115,7 +115,59 @@ namespace SecureApi.Controllers
                 _logger.LogInformation(
                     "User {Email} creating checkout for {Amount:C} SAR",
                     userEmail, totalAmount);
+                // 6. Configure Stripe
+                StripeConfiguration.ApiKey = _configuration["Stripe:StripeKey"];
+                var domain = _configuration["Frontend:FrontendUrl"];
 
+                if (string.IsNullOrWhiteSpace(domain))
+                {
+                    _logger.LogError("Stripe:FrontendUrl not configured");
+                    return StatusCode(500, new { error = "Payment configuration error" });
+                }
+                const decimal VAT_RATE = 0.15m;
+
+                decimal subTotal = items.Sum(i => i.Price * i.Quantity);
+                decimal vatAmount = Math.Round(subTotal * VAT_RATE, 2);
+                decimal totalWithVat = subTotal + vatAmount;
+                _logger.LogInformation(
+    "Subtotal {SubTotal} VAT {VAT} Total {Total}",
+    subTotal, vatAmount, totalWithVat);
+                // Define the minimum amount (e.g., 200 cents/halalas = 2 SAR)
+                const long MIN_STRIPE_AMOUNT_HALALAS = 200;
+
+                var stripeLineItems = items.Select(i => {
+
+                    // Calculate total price for this item including VAT
+                    decimal itemVat = Math.Round(i.Price * VAT_RATE, 2);
+                    decimal priceWithVat = i.Price + itemVat;
+                    // Convert to Halalas (Stripe expects integers in the smallest currency unit)
+                    long unitAmountInHalalas = (long)Math.Round(priceWithVat * 100, 0, MidpointRounding.AwayFromZero);
+                    return new SessionLineItemOptions
+                    {
+
+                        PriceData = new SessionLineItemPriceDataOptions
+                        {
+                            Currency = "sar",
+                            UnitAmount = unitAmountInHalalas,//(long)Math.Round(vatAmount * 100, 0, MidpointRounding.AwayFromZero),
+                            ProductData = new SessionLineItemPriceDataProductDataOptions
+                            {
+                                Name = i.ProductName,
+                                Description = "Includes 15% VAT", // Clearer for the customer
+                                Images = !string.IsNullOrWhiteSpace(i.Image)
+                  ? new List<string> { i.Image }
+                  : null
+                            }
+                        },
+                        Quantity = i.Quantity,
+
+                    };
+                }).ToList();
+                // VALIDATION: Check if the total session amount is high enough
+                long? totalSessionAmount = stripeLineItems.Sum(x => x.PriceData.UnitAmount * x.Quantity);
+                if (totalSessionAmount < MIN_STRIPE_AMOUNT_HALALAS)
+                {
+                    return BadRequest(new { error = "Order total is too low for online payment. Minimum is 2.00 SAR." });
+                }
                 // 5. Create order
                 string orderReference = Guid.NewGuid().ToString("N")[..12].ToUpper();
                 Order order;
@@ -165,36 +217,28 @@ namespace SecureApi.Controllers
                     }
                 }
 
-                // 6. Configure Stripe
-                StripeConfiguration.ApiKey = _configuration["Stripe:StripeKey"];
-                var domain = _configuration["Frontend:FrontendUrl"];
-
-                if (string.IsNullOrWhiteSpace(domain))
-                {
-                    _logger.LogError("Stripe:FrontendUrl not configured");
-                    return StatusCode(500, new { error = "Payment configuration error" });
-                }
-
+            
                 // 7. Create Stripe session
                 var options = new SessionCreateOptions
                 {
                     PaymentMethodTypes = new List<string> { "card" },
-                    LineItems = items.Select(i => new SessionLineItemOptions
-                    {
-                        PriceData = new SessionLineItemPriceDataOptions
-                        {
-                            Currency = "sar",
-                            UnitAmount = (long)Math.Round(i.Price * 100, MidpointRounding.AwayFromZero) ,//(long)(i.Price * 100),
-                            ProductData = new SessionLineItemPriceDataProductDataOptions
-                            {
-                                Name = i.ProductName,
-                                Images = !string.IsNullOrWhiteSpace(i.Image)
-                                    ? new List<string> { i.Image }
-                                    : null
-                            }
-                        },
-                        Quantity = i.Quantity,
-                    }).ToList(),
+                    LineItems = stripeLineItems,
+                    //items.Select(i => new SessionLineItemOptions
+                    //{
+                    //    PriceData = new SessionLineItemPriceDataOptions
+                    //    {
+                    //        Currency = "sar",
+                    //        UnitAmount = (long)(vatAmount * 100),
+                    //        ProductData = new SessionLineItemPriceDataProductDataOptions
+                    //        {
+                    //            Name = i.ProductName + "VAT (15%)",
+                    //            //Images = !string.IsNullOrWhiteSpace(i.Image)
+                    //            //    ? new List<string> { i.Image }
+                    //            //    : null
+                    //        }
+                    //    },
+                    //    Quantity = i.Quantity,
+                    //}).ToList(),
                     Locale = stripeLocale,
                     Mode = "payment",
                     SuccessUrl = $"{domain}/success?order_ref={orderReference}&session_id={{CHECKOUT_SESSION_ID}}",

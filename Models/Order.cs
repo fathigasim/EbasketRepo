@@ -28,8 +28,11 @@ namespace SecureApi.Models
             [Required]
             [Column(TypeName = "decimal(18,2)")]
             public decimal TotalAmount { get; set; }
+            public decimal VatAmount { get; set; }
+            public decimal SubTotal { get; set; }
+        
 
-            [Required]
+             [Required]
             [StringLength(50)]
             public string Status { get; set; } = OrderStatus.Pending;
 

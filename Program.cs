@@ -31,7 +31,7 @@ builder.Services.Configure<SmtpSettings>(
 
 builder.Services.AddDbContext<ApplicationDbContext>(options =>
 {
-    options.UseSqlServer(builder.Configuration.GetConnectionString("Default"));
+    options.UseSqlServer(builder.Configuration.GetConnectionString("DefaultConnection"));
 });
 builder.Services.AddIdentity<ApplicationUser, IdentityRole>(options =>
 {
@@ -43,6 +43,22 @@ builder.Services.AddIdentity<ApplicationUser, IdentityRole>(options =>
     options.User.RequireUniqueEmail = true;
 }).AddEntityFrameworkStores<ApplicationDbContext>()  // ✅ Required
 .AddDefaultTokenProviders();
+
+// Program.cs
+builder.Services.AddHttpClient("GitHubClient", client =>
+{
+    client.BaseAddress = new Uri("https://api.github.com/");
+    client.DefaultRequestHeaders.Add("Accept", "application/vnd.github.v3+json");
+    client.DefaultRequestHeaders.Add("User-Agent", "HttpClientFactory-Sample");
+    client.Timeout = TimeSpan.FromSeconds(10);
+
+}).AddStandardResilienceHandler(options =>
+{
+    // Automatically adds Retries, Circuit Breaker, and Timeouts
+    options.Retry.MaxRetryAttempts = 3;
+    options.Retry.Delay = TimeSpan.FromSeconds(2);
+});
+
 // ===== Swagger =====
 builder.Services.AddSwaggerGen();
 // ===== Localization =====
@@ -105,6 +121,7 @@ builder.Services.AddScoped<IEmailSender, EmailSender>();
 builder.Services.AddHttpContextAccessor();
 builder.Services.AddAutoMapper(typeof(MappingProfile));
 builder.Services.AddScoped<OrderPublisher>();
+builder.Services.AddScoped<GitHubService>();
 builder.Services.AddStackExchangeRedisCache(options =>
 {
     options.Configuration = builder.Configuration["Redis:ConnectionString"];

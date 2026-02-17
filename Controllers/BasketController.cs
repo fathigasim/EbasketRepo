@@ -17,6 +17,28 @@ namespace SecureApi.Controllers
             basketService = _basketService;
             httpcontext = _httpcontext;
         }
+
+        [HttpGet("test-cookie")]
+        public IActionResult TestCookie()
+        {
+            var testValue = Guid.NewGuid().ToString();
+
+            Response.Cookies.Append("TestCookie", testValue, new CookieOptions
+            {
+                Expires = DateTimeOffset.UtcNow.AddDays(7),
+                HttpOnly = false, // So you can see it in browser console
+                SameSite = SameSiteMode.None,
+                Secure = false,
+                Path = "/"
+            });
+
+            return Ok(new
+            {
+                message = "Cookie should be set",
+                cookieValue = testValue,
+                existingCookies = Request.Cookies.Select(c => new { c.Key, c.Value }).ToList()
+            });
+        }
         [HttpGet("BasketItems")]
         public async Task<IActionResult> Index()
         {
@@ -37,8 +59,8 @@ namespace SecureApi.Controllers
             try
             {
 
-                await basketService.AddToBasket(httpcontext.HttpContext, addToBasketDto.ProdId, addToBasketDto.InputQnt);
-                var UpdatedBasket = await basketService.GetBasketItems(httpcontext.HttpContext);
+                await basketService.AddToBasket(HttpContext, addToBasketDto.ProdId, addToBasketDto.InputQnt);
+                var UpdatedBasket = await basketService.GetBasketItems(HttpContext);
                 return Ok(new { message = "Added Successfully", items = UpdatedBasket });
             }
             catch (Exception ex)
@@ -68,6 +90,7 @@ namespace SecureApi.Controllers
             await basketService.RemoveFromBasket(HttpContext, basketRemoveDto.productId, basketRemoveDto.quantity);
 
             var updatedBakset = await basketService.GetBasketItems(HttpContext);
+              
             return Ok(updatedBakset);
 
         }

@@ -73,7 +73,7 @@ appsettings.Production.json
 *.json
 appsettings.json
 appsettings.Production.json
-Dockerfile
-.dockerignore
-docker-compose.yml
+appsettings.Development.json
+
+
 .env

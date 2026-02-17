@@ -24,7 +24,7 @@ namespace SecureApi.Services
         public async Task<PagedResult<ProductDto>> Get(string? q, string? category,string? sort, int page, int pageSize)
         {
             var Request = _contextAccessor?.HttpContext?.Request;
-            var query = _context.Product.AsQueryable();
+            var query = _context.Product.Where(p=>p.Stock>0).AsQueryable();
             if (!string.IsNullOrEmpty(q))
                 query = query.Where(p => p.Name.Contains(q));
             if (!string.IsNullOrEmpty(category))

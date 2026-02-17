@@ -26,23 +26,36 @@ public class ApplicationDbContext : IdentityDbContext<ApplicationUser>
         {
             entity.ToTable("Users");
         });
-        builder.Entity<Category>().HasIndex(p => p.Name).IsUnique();
-        builder.Entity<Product>().HasOne(p => p.Category)
+        builder.Entity<Category>(entity =>
+        {
+            entity.HasIndex(p => p.Name).IsUnique();
+        });
+        builder.Entity<Product>(entity => { entity.HasOne(p => p.Category)
             .WithMany(p => p.Products).HasForeignKey(p => p.CategoryId).IsRequired(false)
             .OnDelete(DeleteBehavior.Restrict);
-        builder.Entity<Product>().Property(p => p.Price)
+            entity.Property(p => p.Price).HasPrecision(18, 2)
                 .HasColumnType("decimal(18,2)");
-        builder.Entity<BasketItems>().HasOne(p => p.Basket)
+        }
+            );
+
+        builder.Entity<BasketItems>(entity =>
+        {
+            entity.HasOne(p => p.Basket)
             .WithMany(p => p.BasketItems).HasForeignKey(p => p.BasketId)
             .IsRequired().OnDelete(DeleteBehavior.Cascade);
-        builder.Entity<BasketItems>().HasOne(p => p.Product).
+            entity.HasOne(p => p.Product).
             WithMany(p => p.basketItems).IsRequired().HasForeignKey(p => p.ProductId).OnDelete(DeleteBehavior.Restrict);
-        builder.Entity<BasketItems>()
-    .HasIndex(bi => new { bi.BasketId, bi.ProductId })
-    .IsUnique();
-        builder.Entity<OrderItems>().HasOne(p => p.Order)
+            entity.HasIndex(bi => new { bi.BasketId, bi.ProductId })
+       .IsUnique();
+        });
+
+
+        builder.Entity<OrderItems>(entity =>
+        {
+            entity.HasOne(p => p.Order)
             .WithMany(p => p.OrderItems).HasForeignKey(p => p.OrderId)
             .IsRequired().OnDelete(DeleteBehavior.Cascade);
+        });
 
 
         builder.Entity<Product>(entity =>
@@ -50,7 +63,7 @@ public class ApplicationDbContext : IdentityDbContext<ApplicationUser>
             entity.Property(e => e.Price).HasPrecision(18, 2).IsRequired();
         });
             // Order Configuration
-            builder.Entity<Order>(entity =>
+        builder.Entity<Order>(entity =>
         {
             entity.HasKey(e => e.Id);
 

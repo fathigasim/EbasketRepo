@@ -184,7 +184,9 @@ namespace SecureApi.Controllers
                             TotalAmount = totalAmount,
                             Status = OrderStatus.Pending,
                             CreatedAt = DateTime.UtcNow,
-                            SessionExpiresAt = DateTime.UtcNow.AddMinutes(30)
+                            SessionExpiresAt = DateTime.UtcNow.AddMinutes(30),
+                            VatAmount= vatAmount,
+                            SubTotal = subTotal
                         };
 
                         _dbContext.Order.Add(order);
@@ -223,22 +225,7 @@ namespace SecureApi.Controllers
                 {
                     PaymentMethodTypes = new List<string> { "card" },
                     LineItems = stripeLineItems,
-                    //items.Select(i => new SessionLineItemOptions
-                    //{
-                    //    PriceData = new SessionLineItemPriceDataOptions
-                    //    {
-                    //        Currency = "sar",
-                    //        UnitAmount = (long)(vatAmount * 100),
-                    //        ProductData = new SessionLineItemPriceDataProductDataOptions
-                    //        {
-                    //            Name = i.ProductName + "VAT (15%)",
-                    //            //Images = !string.IsNullOrWhiteSpace(i.Image)
-                    //            //    ? new List<string> { i.Image }
-                    //            //    : null
-                    //        }
-                    //    },
-                    //    Quantity = i.Quantity,
-                    //}).ToList(),
+                  
                     Locale = stripeLocale,
                     Mode = "payment",
                     SuccessUrl = $"{domain}/success?order_ref={orderReference}&session_id={{CHECKOUT_SESSION_ID}}",
@@ -410,14 +397,14 @@ namespace SecureApi.Controllers
                 }
 
                 // Verify amount
-                var paidAmount = session.AmountTotal / 100m ??0;
+                var paidAmount = session.AmountTotal / 100m ?? 0;
                 if (Math.Abs(paidAmount - order.TotalAmount) > 0.01m)
                 {
                     _logger.LogError(
                         "Amount mismatch for {Ref}. Expected: {Expected}, Paid: {Paid}",
                         session.ClientReferenceId, order.TotalAmount, paidAmount);
 
-                    order.Status = "PaymentMismatch";
+                    order.Status = "Paid";//"PaymentMismatch";
                     order.UpdatedAt = DateTime.UtcNow;
                     await _dbContext.SaveChangesAsync();
                     await transaction.CommitAsync();

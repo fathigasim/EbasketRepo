@@ -1,0 +1,7 @@
+﻿bin
+obj
+.git
+.vs
+*.md 
+.env 
+docker-compose*.yml

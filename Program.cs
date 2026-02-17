@@ -125,23 +125,24 @@ builder.Services.AddScoped<GitHubService>();
 builder.Services.AddStackExchangeRedisCache(options =>
 {
     options.Configuration = builder.Configuration["Redis:ConnectionString"];
-    options.InstanceName = "myapp-redis";
+    options.InstanceName = " ";
+    //options.InstanceName = "myapp-redis";
 });
 
 
-    //builder.Services.AddMassTransit(x =>
-    //{
-    //    x.AddConsumer<OrderCreatedConsumer>();
+//builder.Services.AddMassTransit(x =>
+//{
+//    x.AddConsumer<OrderCreatedConsumer>();
 
-    //    x.UsingRabbitMq((context, cfg) =>
-    //    {
-    //        cfg.Host("myapp-rabbitmq", "/", h =>
-    //        {
-    //            h.Username(builder.Configuration["RABBITMQ_DEFAULT_USER"]);
-    //            h.Password(builder.Configuration["RABBITMQ_DEFAULT_PASS"]);
-    //        });
-    //    });
-    //});
+//    x.UsingRabbitMq((context, cfg) =>
+//    {
+//        cfg.Host("myapp-rabbitmq", "/", h =>
+//        {
+//            h.Username(builder.Configuration["RABBITMQ_DEFAULT_USER"]);
+//            h.Password(builder.Configuration["RABBITMQ_DEFAULT_PASS"]);
+//        });
+//    });
+//});
 builder.Services.AddMassTransit(x =>
 {
     // Register all consumers
@@ -262,7 +263,7 @@ else
     // app.UseCors("ProdCors");
     app.UseHsts();
 }
-
+app.UseCors("DevCors");
 //app.UseHttpsRedirection();
 
 // ===== Request Localization (early) =====

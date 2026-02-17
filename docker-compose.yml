@@ -1,0 +1,114 @@
+﻿
+
+services:
+  sqlserver:
+    image: mcr.microsoft.com/mssql/server:2022-latest
+    container_name: myapp-sqlserver
+    restart: unless-stopped
+    environment:
+      - ACCEPT_EULA=Y
+      - MSSQL_SA_PASSWORD=${MSSQL_SA_PASSWORD}
+      - MSSQL_PID=Developer
+    ports:
+      - "1433:1433"
+    volumes:
+      - sqlserver-data:/var/opt/mssql
+    networks:
+      - myapp-network
+    healthcheck:
+     test: ["CMD-SHELL", "/opt/mssql-tools18/bin/sqlcmd -S localhost -U sa -P $${MSSQL_SA_PASSWORD} -C -Q 'SELECT 1' || exit 1"]
+     interval: 10s
+     timeout: 5s
+     retries: 20
+     start_period: 40s
+
+
+  webapp:
+    build:
+     context: .
+    container_name: myapp
+    restart: unless-stopped
+    ports:
+      - "8080:80"  # Changed from 8080:80 to 8080:8080
+    volumes:
+      - product-images:/app/Img  # ✅ Persist Img folder
+      - dataprotection-keys:/root/.aspnet/DataProtection-Keys
+    env_file:
+      - .env
+    environment:
+      - ASPNETCORE_ENVIRONMENT=Production
+      - ASPNETCORE_URLS=http://+:80
+     
+      - ConnectionStrings__Default=Server=sqlserver;Database=SecureApiDb;User Id=sa;Password=${MSSQL_SA_PASSWORD};TrustServerCertificate=True;
+
+      - EmailSender__Host=${EmailSender__Host}
+      - EmailSender__Port=${EmailSender__Port}
+      - EmailSender__EnableSSL=${EmailSender__EnableSSL}
+      - EmailSender__From=${EmailSender__From}
+      - EmailSender__DisplayName=${EmailSender__DisplayName}
+      - EmailSender__Username=${EmailSender__Username}
+      - EmailSender__Password=${EmailSender__Password}
+     
+      - Jwt__Issuer=${Jwt__Issuer}
+      - Jwt__Audience=${Jwt__Audience}
+      - Jwt__SecretKey=${Jwt__SecretKey}
+      - Jwt__ExpirationInMinutes=${Jwt__ExpirationInMinutes}
+      - Jwt__RefreshTokenExpirationInDays=${Jwt__RefreshTokenExpirationInDays}
+       
+      - Stripe__StripeKey=${Stripe__StripeKey}
+      - Stripe__WebhookSecret=${Stripe__WebhookSecret}
+      
+      - Frontend__FrontendUrl=${Frontend__FrontendUrl}
+      - Redis__ConnectionString=${Redis__ConnectionString}
+    depends_on:
+        sqlserver:
+         condition: service_healthy
+        redis:
+         condition: service_healthy
+    networks:
+      - myapp-network
+    
+     
+
+  redis:
+    image: redis:7.2-alpine
+    container_name: myapp-redis
+    restart: unless-stopped
+   # ports:
+   #   - "6379:6379"
+    networks:
+      - myapp-network
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 3s
+      retries: 5
+  rabbitmq:
+    image: rabbitmq:3-management
+    container_name: myapp-rabbitmq
+    restart: unless-stopped
+   # ports:
+   #   - "5672:5672"     # AMQP port
+   #   - "15672:15672"   # Management UI
+    environment:
+      - RABBITMQ_DEFAULT_USER=${RABBITMQ_DEFAULT_USER}
+      - RABBITMQ_DEFAULT_PASS=${RABBITMQ_DEFAULT_PASS}
+    volumes:
+      - rabbitmq-data:/var/lib/rabbitmq
+    networks:
+      - myapp-network
+    healthcheck:
+      test: ["CMD", "rabbitmq-diagnostics", "check_port_connectivity"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+
+volumes:
+  sqlserver-data:
+  sqlserver-backups: #Add this
+  product-images: #Named volume - persists data
+  rabbitmq-data:
+  dataprotection-keys:
+networks:
+  myapp-network:
+    driver: bridge

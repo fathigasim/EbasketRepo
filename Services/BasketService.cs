@@ -2,6 +2,7 @@
 using SecureApi.Data;
 using SecureApi.Models;
 using SecureApi.Models.DTOs;
+using Stripe;
 
 namespace SecureApi.Services
 {
@@ -12,10 +13,15 @@ namespace SecureApi.Services
         public const string BasketSessionName = "ShoppingCommerceBasket";
         private readonly TimeSpan _cookieExpiry = TimeSpan.FromDays(7);
         private readonly StockService _stockService;
-        public BasketService(ApplicationDbContext _context, StockService stockService)
+        private readonly ILogger<BasketService> _logger;
+
+        public BasketService(ApplicationDbContext _context, StockService stockService,
+            ILogger<BasketService> logger)
         {
             context = _context;
             _stockService = stockService;
+            _logger = logger;
+            ;
         }
 
 
@@ -30,169 +36,292 @@ namespace SecureApi.Services
             if (!string.IsNullOrWhiteSpace(cookie))
             {
                 basket = await context.Basket
-                    .Include(b => b.BasketItems).AsNoTracking()
+                    .Include(b => b.BasketItems)
                     .FirstOrDefaultAsync(b => b.BasketId == cookie);
-
-
             }
 
             if (basket == null && createIfNull)
             {
-                try
+                basket = new Basket();
+                await context.Basket.AddAsync(basket);
+                await context.SaveChangesAsync();
+
+                var options = new CookieOptions
                 {
-                    basket = new Basket(); // BasketId generated via constructor default
-                    await context.Basket.AddAsync(basket);
-                    await context.SaveChangesAsync(); // ensure BasketId persisted
+                    Expires = DateTimeOffset.UtcNow.Add(_cookieExpiry),
+                    HttpOnly = true,
+                    SameSite = SameSiteMode.None, // Better default, use None only if needed
+                    Secure = true,
+                    Path = "/"
+                };
 
+                httpContext.Response.Cookies.Append(BasketSessionName, basket.BasketId, options);
 
-                    var options = new CookieOptions
-                    {
-                        Expires = DateTimeOffset.UtcNow.Add(_cookieExpiry),
-                        HttpOnly = true,
-                        SameSite = SameSiteMode.Lax, // IMPORTANT for cross-site cookies
-                        Secure = true,
-                        Path = "/"
-                    };
-                    httpContext.Response.Cookies.Append(BasketSessionName, basket.BasketId, options);
-
-
-                }
-
-                catch (Exception ex)
-                {
-                    throw new Exception(ex.Message, ex);
-                }
+                _logger.LogInformation($"Cookie set: {BasketSessionName}={basket.BasketId}");
             }
 
             return basket;
         }
-
         public async Task AddToBasket(HttpContext httpContext, string productId, int quantity = 1)
         {
-            if (quantity <= 0) throw new ArgumentException("Quantity must be > 0", nameof(quantity));
-            var basket = GetBasket(httpContext, true);
+            if (quantity <= 0)
+                throw new ArgumentException("Quantity must be > 0", nameof(quantity));
 
-            var item = await context.BasketItems
-                .FirstOrDefaultAsync(i => i.BasketId == basket.Result.BasketId && i.ProductId == productId);
+            var basket = await GetBasket(httpContext, true);
+            if (basket == null)
+                throw new InvalidOperationException("Failed to get or create basket");
 
-            using (var transaction = context.Database.BeginTransaction())
+            await using var transaction = await context.Database.BeginTransactionAsync();
+            try
             {
-                try
+                // Load item within transaction
+                var item = await context.BasketItems
+                    .FirstOrDefaultAsync(i => i.BasketId == basket.BasketId && i.ProductId == productId);
+
+                // Get and update product stock
+                var product = await context.Product.FindAsync(productId);
+                if (product == null)
+                    throw new InvalidOperationException($"Product {productId} not found");
+
+                if (product.Stock < quantity)
+                    throw new InvalidOperationException($"Insufficient stock. Available: {product.Stock}");
+
+                // Decrease stock
+                product.Stock -= quantity;
+
+                if (item == null)
                 {
-                    if (item == null)
+                    item = new BasketItems
                     {
-                        item = new BasketItems
-                        {
-                            BasketId = basket.Result.BasketId,
-                            ProductId = productId,
-                            Quantity = quantity
-                        };
-
-                        await _stockService.CheckStock(productId, quantity);
-                        await context.BasketItems.AddAsync(item);
-                        await context.SaveChangesAsync();
-
-
-
-                    }
-
-
-
-                    else
-                    {
-
-                        await _stockService.CheckStock(productId, quantity);
-                        item.Quantity += quantity;
-                        context.BasketItems.Update(item);
-                        await context.SaveChangesAsync();
-                    }
-                    await transaction.CommitAsync();
+                        BasketId = basket.BasketId,
+                        ProductId = productId,
+                        Quantity = quantity
+                    };
+                    await context.BasketItems.AddAsync(item);
                 }
-                catch (Exception ex)
+                else
                 {
-                    await transaction.RollbackAsync();
-                    throw new Exception(ex.Message);
+                    item.Quantity += quantity;
                 }
+
+                await context.SaveChangesAsync();
+                await transaction.CommitAsync();
+
+                _logger.LogInformation($"Added {quantity}x {productId} to basket {basket.BasketId}");
+            }
+            catch
+            {
+                await transaction.RollbackAsync();
+                throw;
             }
         }
         public async Task RemoveFromBasket(HttpContext httpContext, string productId, int quantity = 1)
         {
-            if (quantity <= 0) throw new ArgumentException("Quantity must be > 0", nameof(quantity));
+            if (quantity <= 0)
+                throw new ArgumentException("Quantity must be > 0", nameof(quantity));
+
             var basket = await GetBasket(httpContext, false);
             if (basket == null) return;
 
-            var item = await context.BasketItems
-                .FirstOrDefaultAsync(i => i.BasketId == basket.BasketId && i.ProductId == productId);
-
-            if (item == null) return;
-
-            item.Quantity -= quantity;
-            if (item.Quantity <= 0)
+            await using var transaction = await context.Database.BeginTransactionAsync();
+            try
             {
-                context.BasketItems.Remove(item);
-            }
-            else
-            {
-                context.BasketItems.Update(item);
-            }
+                var item = basket.BasketItems
+                    .FirstOrDefault(i => i.ProductId == productId);
 
-            await context.SaveChangesAsync();
+                if (item == null) return;
+
+              
+                var product = await context.Product
+                    .FirstOrDefaultAsync(p => p.Id == item.ProductId);
+
+                if (product == null) return;
+
+                if (item.Quantity <= quantity)
+                {
+                  
+                    product.Stock += item.Quantity;  
+                    context.BasketItems.Remove(item);
+
+                  
+                }
+                else
+                {
+                 
+                    item.Quantity -= quantity;
+                    product.Stock += quantity;
+                }
+
+                await context.SaveChangesAsync();
+                await transaction.CommitAsync();
+
+  
+                if (item.Quantity <= quantity)
+                {
+                    var hasItems = await context.BasketItems.AnyAsync(i => i.BasketId == basket.BasketId);
+                    if (!hasItems)
+                    {
+                        httpContext.Response.Cookies.Delete(BasketSessionName);
+                    }
+                }
+            }
+            catch
+            {
+                await transaction.RollbackAsync();
+                throw;
+            }
         }
+
+
 
         public async Task<List<BasketItemViewModel>> GetBasketItems(HttpContext httpContext)
         {
-            var Request = httpContext.Request;
             var basket = await GetBasket(httpContext, false);
             if (basket == null) return new List<BasketItemViewModel>();
 
-            // Join with products if product data is in same DB. Otherwise return basic data.
-            var query = from bi in context.BasketItems.Include(p => p.Product)
-                        where bi.BasketId == basket.BasketId
-                        select new BasketItemViewModel
-                        {
-                            Id = bi.BasketitemId,
-                            ProductId = bi.ProductId,
-                            Quantity = bi.Quantity,
-                            ProductName = bi.Product.Name,
-                            Price = bi.Product.Price,
-                            Image = $"{Request.Scheme}://{Request.Host}/StaticImages/{bi.Product.ImagePath}"
-                        };
+            var items = await context.BasketItems
+                .Include(bi => bi.Product)
+                .Where(bi => bi.BasketId == basket.BasketId)
+                .Select(bi => new BasketItemViewModel
+                {
+                    Id = bi.BasketitemId,
+                    ProductId = bi.ProductId,
+                    Quantity = bi.Quantity,
+                    ProductName = bi.Product.Name,
+                    Price = bi.Product.Price,
+                    Image = $"{httpContext.Request.Scheme}://{httpContext.Request.Host}/StaticImages/{bi.Product.ImagePath}"
+                })
+                .ToListAsync();
 
-            return await query.ToListAsync();
+            return items;
         }
-
         public async Task<BasketSummeryViewModel> GetBasketSummery(HttpContext httpContext)
         {
-            var model = new BasketSummeryViewModel(0, 0);
             var basket = await GetBasket(httpContext, false);
-            if (basket == null) return model;
-            model.BasketTotal = context.BasketItems.Include(p => p.Product).Where(p => p.BasketId == basket.BasketId).Sum(p => p.Quantity * p.Product.Price);
-            model.BasketCount = context.BasketItems.Include(p => p.Product).Where(p => p.BasketId == basket.BasketId).Select(p => p.ProductId).Count();
-            return model;
+            if (basket == null)
+                return new BasketSummeryViewModel(0, 0);
 
+            var items = await context.BasketItems
+                .Include(bi => bi.Product)
+                .Where(bi => bi.BasketId == basket.BasketId)
+                .ToListAsync();
+
+            var total = items.Sum(bi => bi.Quantity * bi.Product.Price);
+            var count = items.Count;
+
+            return new BasketSummeryViewModel(count,total);
         }
+        //public async Task<BasketSummeryViewModel> GetBasketSummery(HttpContext httpContext)
+        //{
+        //    var basket = await GetBasket(httpContext, false);
+        //    if (basket == null)
+        //        return new BasketSummeryViewModel(0, 0);
+
+        //    // Single query with both calculations
+        //    var summary = await context.BasketItems
+        //        .Include(bi => bi.Product)
+        //        .Where(bi => bi.BasketId == basket.BasketId)
+        //        .GroupBy(bi => 1) // Dummy grouping for aggregate
+        //        .Select(g => new
+        //        {
+        //            Total = g.Sum(bi => bi.Quantity * bi.Product.Price),
+        //            Count = g.Count()
+        //        })
+        //        .FirstOrDefaultAsync();
+
+        //    if (summary == null)
+        //        return new BasketSummeryViewModel(0, 0);
+
+        //    return new BasketSummeryViewModel(summary.Total, summary.Count);
+        //}
+
         public async Task ClearBasket(HttpContext httpContext)
         {
             var basket = await GetBasket(httpContext, false);
             if (basket == null) return;
 
-            var items = await context.BasketItems.Where(i => i.BasketId == basket.BasketId).ExecuteDeleteAsync();
+            await using var transaction = await context.Database.BeginTransactionAsync(); // Fixed typo
+            try
+            {
+                var basketItems = await context.BasketItems
+                    .Where(i => i.BasketId == basket.BasketId)
+                    .ToListAsync();
 
+                if (!basketItems.Any())
+                {
+                    await transaction.CommitAsync();
+                    return;
+                }
 
-            await context.SaveChangesAsync();
+                var productIds = basketItems.Select(i => i.ProductId).Distinct();
+                var products = await context.Product
+                    .Where(p => productIds.Contains(p.Id))
+                    .ToListAsync();
+
+                foreach (var product in products)
+                {
+                    product.Stock += basketItems
+                        .Where(p => p.ProductId == product.Id)
+                        .Sum(p => p.Quantity);
+                }
+
+                context.BasketItems.RemoveRange(basketItems);
+                await context.SaveChangesAsync();
+                await transaction.CommitAsync();
+
+                // ✅ Delete cookie after clearing
+                httpContext.Response.Cookies.Delete(BasketSessionName);
+            }
+            catch
+            {
+                await transaction.RollbackAsync();
+                throw;
+            }
         }
 
         public async Task RemoveBasket(HttpContext httpContext)
         {
             var basket = await GetBasket(httpContext, false);
-               context.Basket.Remove(basket);
-            await context.SaveChangesAsync();
-          //  if (basket == null) return;
+            if (basket == null) return;
 
+            await using var transaction = await context.Database.BeginTransactionAsync();
+            try
+            {
+                // Get product IDs before removing basket
+                var productIds = basket.BasketItems
+                    .Select(bi => bi.ProductId)
+                    .Distinct()
+                    .ToList();
 
+                // Load products
+                var products = await context.Product
+                    .Where(p => productIds.Contains(p.Id))
+                    .ToListAsync();
 
-            httpContext.Response.Cookies.Delete(BasketSessionName);
-            await context.SaveChangesAsync();
+                // Return stock
+                foreach (var product in products)
+                {
+                    var totalQuantity = basket.BasketItems
+                        .Where(bi => bi.ProductId == product.Id)
+                        .Sum(bi => bi.Quantity);
+
+                    product.Stock += totalQuantity;
+                }
+
+                // Remove basket (should cascade delete items if configured)
+                context.Basket.Remove(basket);
+
+                await context.SaveChangesAsync();
+                await transaction.CommitAsync();
+
+                // Delete cookie AFTER successful transaction
+                httpContext.Response.Cookies.Delete(BasketSessionName);
+            }
+            catch
+            {
+                await transaction.RollbackAsync();
+                throw;
+            }
         }
     }
 
